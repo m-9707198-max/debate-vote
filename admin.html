@@ -27,12 +27,29 @@
         .preview-content { background: white; padding: 1rem; border-radius: 0.8rem; margin-top: 0.5rem; border: 1px solid #cbd5e1; pointer-events: none; opacity: 0.9; }
         .preview-content h4 { text-align: center; margin-bottom: 1rem; font-size: 1.2rem; }
         .preview-item { background: #f8fafc; padding: 0.6rem; margin-bottom: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; }
+        
+        /* API状态卡片样式 */
+        .api-status { background: #fef9e3; border-left: 4px solid #f59e0b; }
+        .api-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0; }
+        .api-badge { font-family: monospace; font-size: 0.8rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 0.5rem; }
+        .api-link { color: #3b82f6; text-decoration: none; font-size: 0.85rem; }
+        .api-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div id="adminPanel" class="container">
     <h2>⚙️ 投票系统指挥中心</h2>
+    
+    <!-- API 状态监控卡片 -->
+    <div class="card api-status">
+        <h3 style="margin:0 0 0.5rem 0;">📡 API 状态监控</h3>
+        <div id="apiStatusContainer"></div>
+        <div style="font-size:0.8rem; color:#64748b; margin-top:0.5rem;">
+            💡 免费额度：每月 100 次写入（PUT），读取不限。每次管理员操作（开启/结束投票、保存名单等）都会消耗一次写入。<br>
+            🔗 查看剩余额度：<a href="https://jsonbin.io/account" target="_blank" class="api-link">点击进入 JSONBin 账户页面</a>，查看 "API Usage" 区域。
+        </div>
+    </div>
     
     <div class="card preview-box">
         <h3 style="color: #1d4ed8; margin: 0;">👁️ 当前大众界面实时预览</h3>
@@ -145,6 +162,27 @@
     async function pushToRemote() {
         const result = await requestWithFallback('PUT', appData);
         return result.success;
+    }
+
+    // ========== API 状态检测 ==========
+    async function checkAPIStatus() {
+        const statusHtml = [];
+        for (let i = 0; i < API_CONFIGS.length; i++) {
+            const cfg = API_CONFIGS[i];
+            try {
+                const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
+                    headers: { 'X-Master-Key': cfg.apiKey }
+                });
+                if (resp.ok) {
+                    statusHtml.push(`<div class="api-item"><span><span style="color:#10b981;">✅</span> 配置 ${i+1}</span><span class="api-badge">有效</span></div>`);
+                } else {
+                    statusHtml.push(`<div class="api-item"><span><span style="color:#ef4444;">❌</span> 配置 ${i+1}</span><span class="api-badge">无效 (HTTP ${resp.status})</span></div>`);
+                }
+            } catch (e) {
+                statusHtml.push(`<div class="api-item"><span><span style="color:#ef4444;">⚠️</span> 配置 ${i+1}</span><span class="api-badge">请求失败</span></div>`);
+            }
+        }
+        document.getElementById("apiStatusContainer").innerHTML = statusHtml.join('');
     }
 
     function renderVoterPreview() {
@@ -318,7 +356,16 @@
 
     document.getElementById("resetAllBtn").onclick = async () => { if (confirm("确定彻底清空所有数据（包括历史）？")) { appData = { phase: "waiting", debateTopic: "", positions: [], debateVotes: {}, pkVotes: {}, topics: [{id:"t1",title:"辩题1"},{id:"t2",title:"辩题2"},{id:"t3",title:"辩题3"}], topicVotes: {t1:{}, t2:{}, t3:{}}, tieCandidates: [], pkModeActive: false, history: [], allowedVoters: [] }; lastHistoryLength = -1; await pushToRemote(); renderAdminUI(true); alert("已清空"); } };
 
-    (async () => { const remote = await loadData(); if (remote) appData = { ...appData, ...remote }; renderAdminUI(true); setInterval(sync, 3000); })();
+    (async () => {
+        await checkAPIStatus(); // 初始检测 API 状态
+        const remote = await loadData();
+        if (remote) appData = { ...appData, ...remote };
+        renderAdminUI(true);
+        setInterval(async () => {
+            await checkAPIStatus(); // 每 30 秒刷新一次 API 状态
+            await sync();
+        }, 3000);
+    })();
 </script>
 </body>
 </html>
