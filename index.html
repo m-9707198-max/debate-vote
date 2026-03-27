@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>辩论赛实时投票系统</title>
+    <title>辩论赛实时投票系统 - 多备用API</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f5f7fb; color: #1e293b; padding: 1rem; }
@@ -31,28 +31,78 @@
 </div>
 
 <script>
-    const JSONBIN_API_KEY = "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC";
-    const JSONBIN_BIN_ID = "69c6e9f0aa77b81da9286fee";
-    let appData = { phase: "waiting", positions: [], debateVotes: {}, pkVotes: {}, topics: [], topicVotes: {}, tieCandidates: [], allowedVoters: [] };
+    // 多个备用 API 配置（按优先级顺序）
+    const API_CONFIGS = [
+        {
+            apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC",
+            binId: "69c6e9f0aa77b81da9286fee"
+        },
+        {
+            apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6",
+            binId: "69c6fdadc3097a1dd569be7c"
+        }
+    ];
+
+    let appData = {
+        phase: "waiting",
+        positions: [],
+        debateVotes: {},
+        pkVotes: {},
+        topics: [],
+        topicVotes: {},
+        tieCandidates: [],
+        allowedVoters: []
+    };
+
+    // 通用的数据读写函数，支持多配置自动切换
+    async function requestWithFallback(method, data = null) {
+        for (let i = 0; i < API_CONFIGS.length; i++) {
+            const cfg = API_CONFIGS[i];
+            const url = `https://api.jsonbin.io/v3/b/${cfg.binId}/latest`;
+            try {
+                if (method === 'GET') {
+                    const resp = await fetch(url, { headers: { 'X-Master-Key': cfg.apiKey } });
+                    if (resp.ok) {
+                        const result = await resp.json();
+                        return { success: true, data: result.record, configIndex: i };
+                    }
+                } else if (method === 'PUT') {
+                    const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': cfg.apiKey
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    if (resp.ok) {
+                        return { success: true, configIndex: i };
+                    }
+                }
+            } catch (e) {
+                console.warn(`配置 ${i+1} 请求失败:`, e);
+            }
+        }
+        return { success: false };
+    }
 
     async function loadData() {
-        try { const resp = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
-            if (!resp.ok) return null; const data = await resp.json(); return data.record; } catch (e) { return null; }
-    }
-    async function pushToRemote() {
-        try { await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY }, body: JSON.stringify(appData) }); } catch (e) {}
+        const result = await requestWithFallback('GET');
+        if (result.success) return result.data;
+        return null;
     }
 
-    // 名单与重复校验（严格版）
+    async function pushToRemote() {
+        const result = await requestWithFallback('PUT', appData);
+        return result.success;
+    }
+
+    // 名单与重复校验
     function checkVoterEligibility(name, voteType) {
         if (!name) return false;
         const cleanName = name.trim();
         const allowedList = (appData.allowedVoters || []).map(n => n.trim());
-        
-        // 白名单拦截
         if (allowedList.length > 0 && !allowedList.includes(cleanName)) return false;
-        
-        // 重复投票拦截
         if (voteType === 'debate' && appData.debateVotes[cleanName]) return false;
         if (voteType === 'pk' && appData.pkVotes[cleanName]) return false;
         if (voteType === 'topic') {
@@ -65,7 +115,7 @@
 
     function renderVoterUI() {
         const container = document.getElementById("voterContent");
-        if (container.dataset.phase === appData.phase) return; // 防止打断输入
+        if (container.dataset.phase === appData.phase) return;
         container.dataset.phase = appData.phase;
 
         if (appData.phase === "debateVoting") {
@@ -77,9 +127,7 @@
                 const selected = document.querySelector('input[name="debateVote"]:checked');
                 if (!name.trim()) return alert("请输入姓名");
                 if (!selected) return alert("请选择辩手");
-                
                 if (!checkVoterEligibility(name, 'debate')) return alert("投票失败：管理员名单中没有此名字 或 已经投过票");
-                
                 appData.debateVotes[name.trim()] = selected.value; await pushToRemote();
                 alert("投票成功！"); document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block";
             };
@@ -92,9 +140,7 @@
                 const selected = document.querySelector('input[name="pkVote"]:checked');
                 if (!name.trim()) return alert("请输入姓名");
                 if (!selected) return alert("请选择辩手");
-                
                 if (!checkVoterEligibility(name, 'pk')) return alert("投票失败：管理员名单中没有此名字 或 已经投过票");
-                
                 appData.pkVotes[name.trim()] = selected.value; await pushToRemote();
                 alert("PK投票成功！"); document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block";
             };
@@ -104,9 +150,7 @@
             document.getElementById("topicVoteBtn").onclick = async () => {
                 const name = document.getElementById("voterName").value;
                 if (!name.trim()) return alert("请输入姓名");
-                
                 if (!checkVoterEligibility(name, 'topic')) return alert("投票失败：管理员名单中没有此名字 或 已经投过票");
-                
                 let allSelected = true;
                 for (let t of appData.topics) {
                     const selected = document.querySelector(`input[name="topic_${t.id}"]:checked`);
@@ -120,8 +164,15 @@
         }
     }
 
-    async function sync() { const remote = await loadData(); if (remote) { appData = { ...appData, ...remote }; renderVoterUI(); } }
-    setInterval(sync, 3000); sync();
+    async function sync() {
+        const remote = await loadData();
+        if (remote) {
+            appData = { ...appData, ...remote };
+            renderVoterUI();
+        }
+    }
+    setInterval(sync, 3000);
+    sync();
 </script>
 </body>
 </html>
