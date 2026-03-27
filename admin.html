@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>系统管理控制台</title>
+    <title>系统管理控制台 - 双API备用</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #1e293b; color: #333; padding: 1rem; }
@@ -88,14 +88,64 @@
 </div>
 
 <script>
-    const JSONBIN_API_KEY = "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC";
-    const JSONBIN_BIN_ID = "69c6e9f0aa77b81da9286fee";
+    // ========== 多备用 API 配置 ==========
+    const API_CONFIGS = [
+        {
+            apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC",
+            binId: "69c6e9f0aa77b81da9286fee"
+        },
+        {
+            apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6",
+            binId: "69c6fdadc3097a1dd569be7c"
+        }
+    ];
 
     let appData = { phase: "waiting", debateTopic: "", positions: [], debateVotes: {}, pkVotes: {}, topics: [], topicVotes: {t1:{}, t2:{}, t3:{}}, tieCandidates: [], pkModeActive: false, history: [], allowedVoters: [] };
     let lastHistoryLength = -1;
 
-    async function loadData() { try { const resp = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } }); if (!resp.ok) return null; const data = await resp.json(); return data.record; } catch (e) { return null; } }
-    async function pushToRemote() { try { await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY }, body: JSON.stringify(appData) }); } catch (e) {} }
+    // ========== 通用请求函数，支持多配置自动切换 ==========
+    async function requestWithFallback(method, data = null) {
+        for (let i = 0; i < API_CONFIGS.length; i++) {
+            const cfg = API_CONFIGS[i];
+            try {
+                if (method === 'GET') {
+                    const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
+                        headers: { 'X-Master-Key': cfg.apiKey }
+                    });
+                    if (resp.ok) {
+                        const result = await resp.json();
+                        return { success: true, data: result.record, configIndex: i };
+                    }
+                } else if (method === 'PUT') {
+                    const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': cfg.apiKey
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    if (resp.ok) {
+                        return { success: true, configIndex: i };
+                    }
+                }
+            } catch (e) {
+                console.warn(`配置 ${i+1} 请求失败:`, e);
+            }
+        }
+        return { success: false };
+    }
+
+    async function loadData() {
+        const result = await requestWithFallback('GET');
+        if (result.success) return result.data;
+        return null;
+    }
+
+    async function pushToRemote() {
+        const result = await requestWithFallback('PUT', appData);
+        return result.success;
+    }
 
     function renderVoterPreview() {
         const container = document.getElementById("voterPreview");
@@ -178,7 +228,6 @@
         }
     }
 
-    // 核心修复：更美观紧凑的历史记录排版，修复辩题投票被错误标记为最佳辩手的问题
     function renderHistory() {
         const histDiv = document.getElementById("historyList");
         if (!appData.history.length) { histDiv.innerHTML = "<div style='color:#94a3b8; text-align:center; padding:1rem;'>暂无历史记录</div>"; return; }
@@ -188,7 +237,6 @@
             let isTieRecord = h.title && h.title.includes('[第一轮平票记录]');
             let titlePrefix = '';
             
-            // 修复点1：精准识别记录类型
             if (h.type === 'topic') titlePrefix = '📋 辩题投票';
             else if (h.type === 'pk') titlePrefix = '⚔️ 决胜PK加赛';
             else if (isTieRecord) titlePrefix = '⚖️ 第一轮平票明细';
@@ -210,7 +258,6 @@
                 const isTie = h.details.filter(d => d.votes === maxVotes).length > 1;
 
                 h.details.forEach(d => { 
-                    // 有票必留，0票平局也留
                     if (d.votes > 0 || (isTie && d.votes === maxVotes)) {
                         let voterStr = d.voters.length > 0 ? `<div style="color:#64748b; font-size:0.8rem; margin-top:0.2rem; padding-left:1.5rem;">投票人: ${d.voters.join(', ')}</div>` : `<div style="color:#94a3b8; font-size:0.8rem; margin-top:0.2rem; padding-left:1.5rem;">无人投票</div>`;
                         let isWinner = (d.votes === maxVotes && maxVotes > 0);
