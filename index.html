@@ -3,21 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>辩论赛实时投票</title>
+    <title>辩论赛投票系统 - 投票人界面</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f5f7fb; color: #1e293b; padding: 1rem; }
-        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
         h2 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; }
-        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; }
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
         .form-group { margin-bottom: 1rem; }
-        input { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 1rem; }
-        button { background: #3b82f6; border: none; color: white; padding: 0.6rem 1.5rem; border-radius: 2rem; cursor: pointer; font-weight: bold; width: 100%; font-size: 1.1rem; }
-        .candidate-list, .topics-area { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
-        .candidate-item, .topic-item { background: #f8fafc; padding: 0.8rem; border-radius: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
-        .vote-option { display: flex; gap: 0.8rem; }
-        .status-msg { background: #f1f5f9; padding: 0.6rem; border-radius: 0.5rem; text-align: center; margin-top: 0.8rem; color: #10b981; font-weight: bold; }
-        .notice-text { color: #ef4444; font-weight: bold; margin-top: 1rem; font-size: 1.1rem; }
+        input, select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        button {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 1.1rem;
+        }
+        .candidate-list, .topics-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .candidate-item, .topic-item {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .vote-option {
+            display: flex;
+            gap: 0.8rem;
+        }
+        .status-msg {
+            background: #f1f5f9;
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            margin-top: 0.8rem;
+            color: #10b981;
+            font-weight: bold;
+        }
+        .notice-text {
+            color: #ef4444;
+            font-weight: bold;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        @media (max-width: 700px) {
+            .candidate-item, .topic-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -31,7 +101,7 @@
 </div>
 
 <script>
-    // 多个备用 API 配置（按优先级顺序）
+    // ========== 多备用 API 配置（与管理员控制台一致） ==========
     const API_CONFIGS = [
         {
             apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC",
@@ -45,23 +115,26 @@
 
     let appData = {
         phase: "waiting",
+        debateTopic: "",
         positions: [],
         debateVotes: {},
         pkVotes: {},
         topics: [],
         topicVotes: {},
         tieCandidates: [],
+        pkModeActive: false,
         allowedVoters: []
     };
 
-    // 通用的数据读写函数，支持多配置自动切换
+    // ========== 通用请求函数 ==========
     async function requestWithFallback(method, data = null) {
         for (let i = 0; i < API_CONFIGS.length; i++) {
             const cfg = API_CONFIGS[i];
-            const url = `https://api.jsonbin.io/v3/b/${cfg.binId}/latest`;
             try {
                 if (method === 'GET') {
-                    const resp = await fetch(url, { headers: { 'X-Master-Key': cfg.apiKey } });
+                    const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
+                        headers: { 'X-Master-Key': cfg.apiKey }
+                    });
                     if (resp.ok) {
                         const result = await resp.json();
                         return { success: true, data: result.record, configIndex: i };
@@ -97,12 +170,19 @@
         return result.success;
     }
 
-    // 名单与重复校验
+    // 获取有姓名的辩手
+    function getActiveDebaters() {
+        return (appData.positions || []).filter(p => p.name && p.name.trim() !== "");
+    }
+
+    // 检查投票资格（白名单 + 重复校验）
     function checkVoterEligibility(name, voteType) {
         if (!name) return false;
         const cleanName = name.trim();
         const allowedList = (appData.allowedVoters || []).map(n => n.trim());
+        // 如果白名单不为空且不包含该姓名，则拒绝
         if (allowedList.length > 0 && !allowedList.includes(cleanName)) return false;
+        // 重复校验
         if (voteType === 'debate' && appData.debateVotes[cleanName]) return false;
         if (voteType === 'pk' && appData.pkVotes[cleanName]) return false;
         if (voteType === 'topic') {
@@ -113,65 +193,162 @@
         return true;
     }
 
+    // 渲染投票人界面
     function renderVoterUI() {
         const container = document.getElementById("voterContent");
-        if (container.dataset.phase === appData.phase) return;
+        if (container.dataset.phase === appData.phase) return; // 避免频繁重绘
         container.dataset.phase = appData.phase;
 
         if (appData.phase === "debateVoting") {
-            const debaters = appData.positions.filter(p => p.name && p.name.trim() !== "");
-            container.innerHTML = `<h2>🏆 最佳辩手投票</h2><div class="card"><div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="输入姓名"></div><div class="candidate-list" id="candList"></div><button id="voteBtn">提交投票</button><div id="msg" class="status-msg" style="display:none;"></div></div>`;
-            document.getElementById("candList").innerHTML = debaters.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="debateVote" value="${d.key}"> 选择</label></div>`).join('');
+            const debaters = getActiveDebaters();
+            if (debaters.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center;"><h2>🏆 最佳辩手投票</h2><p>暂无有效辩手，请联系管理员配置。</p></div>`;
+                return;
+            }
+            container.innerHTML = `
+                <h2>🏆 最佳辩手投票</h2>
+                <div class="card">
+                    <div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="请输入姓名"></div>
+                    <div class="candidate-list" id="candList"></div>
+                    <button id="voteBtn">提交投票</button>
+                    <div id="msg" class="status-msg" style="display:none;"></div>
+                </div>
+            `;
+            const listDiv = document.getElementById("candList");
+            listDiv.innerHTML = debaters.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="debateVote" value="${d.key}"> 选择</label></div>`).join('');
             document.getElementById("voteBtn").onclick = async () => {
                 const name = document.getElementById("voterName").value;
                 const selected = document.querySelector('input[name="debateVote"]:checked');
                 if (!name.trim()) return alert("请输入姓名");
                 if (!selected) return alert("请选择辩手");
-                if (!checkVoterEligibility(name, 'debate')) return alert("投票失败：管理员名单中没有此名字 或 已经投过票");
-                appData.debateVotes[name.trim()] = selected.value; await pushToRemote();
-                alert("投票成功！"); document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block";
+                if (!checkVoterEligibility(name, 'debate')) return alert("投票失败：您不在白名单中或已投过票");
+                appData.debateVotes[name.trim()] = selected.value;
+                await pushToRemote();
+                alert("投票成功！");
+                const msgDiv = document.getElementById("msg");
+                msgDiv.innerText = "✅ 投票已提交，感谢参与！";
+                msgDiv.style.display = "block";
             };
-        } else if (appData.phase === "pkVoting") {
-            const pkCands = appData.tieCandidates.map(k => appData.positions.find(p => p.key === k));
-            container.innerHTML = `<h2>⚔️ 平票加赛 · 决胜投票</h2><div class="card"><div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="输入姓名"></div><div class="candidate-list" id="pkList"></div><button id="pkVoteBtn">提交PK投票</button><div id="msg" class="status-msg" style="display:none;"></div></div>`;
-            document.getElementById("pkList").innerHTML = pkCands.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="pkVote" value="${d.key}"> 选择</label></div>`).join('');
+        } 
+        else if (appData.phase === "pkVoting") {
+            const pkCands = (appData.tieCandidates || []).map(k => appData.positions.find(p => p.key === k)).filter(p => p);
+            if (pkCands.length !== 2) {
+                container.innerHTML = `<div class="card" style="text-align:center;"><h2>⚔️ 平票加赛</h2><p>等待管理员配置加赛辩手...</p></div>`;
+                return;
+            }
+            container.innerHTML = `
+                <h2>⚔️ 平票加赛 · 决胜投票</h2>
+                <div class="card">
+                    <div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="请输入姓名"></div>
+                    <div class="candidate-list" id="pkList"></div>
+                    <button id="pkVoteBtn">提交PK投票</button>
+                    <div id="msg" class="status-msg" style="display:none;"></div>
+                </div>
+            `;
+            const listDiv = document.getElementById("pkList");
+            listDiv.innerHTML = pkCands.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="pkVote" value="${d.key}"> 选择</label></div>`).join('');
             document.getElementById("pkVoteBtn").onclick = async () => {
                 const name = document.getElementById("voterName").value;
                 const selected = document.querySelector('input[name="pkVote"]:checked');
                 if (!name.trim()) return alert("请输入姓名");
                 if (!selected) return alert("请选择辩手");
-                if (!checkVoterEligibility(name, 'pk')) return alert("投票失败：管理员名单中没有此名字 或 已经投过票");
-                appData.pkVotes[name.trim()] = selected.value; await pushToRemote();
-                alert("PK投票成功！"); document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block";
+                if (!checkVoterEligibility(name, 'pk')) return alert("投票失败：您不在白名单中或已投过PK票");
+                appData.pkVotes[name.trim()] = selected.value;
+                await pushToRemote();
+                alert("PK投票成功！");
+                const msgDiv = document.getElementById("msg");
+                msgDiv.innerText = "✅ PK投票已提交";
+                msgDiv.style.display = "block";
             };
-        } else if (appData.phase === "topicVoting") {
-            container.innerHTML = `<h2>📋 辩题投票</h2><div class="card"><div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="输入姓名"></div><div class="topics-area" id="topicsArea"></div><button id="topicVoteBtn">提交投票</button><div id="msg" class="status-msg" style="display:none;"></div></div>`;
-            document.getElementById("topicsArea").innerHTML = appData.topics.map(t => `<div class="topic-item"><div><strong>${t.title}</strong></div><div class="vote-option"><label><input type="radio" name="topic_${t.id}" value="agree"> 赞成</label><label><input type="radio" name="topic_${t.id}" value="disagree"> 反对</label><label><input type="radio" name="topic_${t.id}" value="abstain"> 弃权</label></div></div>`).join('');
+        }
+        else if (appData.phase === "topicVoting") {
+            if (!appData.topics || appData.topics.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center;"><h2>📋 辩题投票</h2><p>暂无辩题，请联系管理员配置。</p></div>`;
+                return;
+            }
+            container.innerHTML = `
+                <h2>📋 辩题投票</h2>
+                <div class="card">
+                    <div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="请输入姓名"></div>
+                    <div class="topics-area" id="topicsArea"></div>
+                    <button id="topicVoteBtn">提交投票</button>
+                    <div id="msg" class="status-msg" style="display:none;"></div>
+                </div>
+            `;
+            const topicsDiv = document.getElementById("topicsArea");
+            topicsDiv.innerHTML = appData.topics.map(t => `
+                <div class="topic-item">
+                    <div><strong>${escapeHtml(t.title)}</strong></div>
+                    <div class="vote-option">
+                        <label><input type="radio" name="topic_${t.id}" value="agree"> 赞成</label>
+                        <label><input type="radio" name="topic_${t.id}" value="disagree"> 反对</label>
+                        <label><input type="radio" name="topic_${t.id}" value="abstain"> 弃权</label>
+                    </div>
+                </div>
+            `).join('');
             document.getElementById("topicVoteBtn").onclick = async () => {
                 const name = document.getElementById("voterName").value;
                 if (!name.trim()) return alert("请输入姓名");
-                if (!checkVoterEligibility(name, 'topic')) return alert("投票失败：管理员名单中没有此名字 或 已经投过票");
+                if (!checkVoterEligibility(name, 'topic')) return alert("投票失败：您不在白名单中或已投过某些辩题");
                 let allSelected = true;
                 for (let t of appData.topics) {
                     const selected = document.querySelector(`input[name="topic_${t.id}"]:checked`);
-                    if (!selected) { alert(`请为辩题「${t.title}」选择选项`); allSelected = false; break; }
+                    if (!selected) {
+                        alert(`请为辩题「${t.title}」选择一个选项`);
+                        allSelected = false;
+                        break;
+                    }
                     appData.topicVotes[t.id][name.trim()] = selected.value;
                 }
-                if (allSelected) { await pushToRemote(); alert("所有辩题投票已提交！"); document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block"; }
+                if (allSelected) {
+                    await pushToRemote();
+                    alert("所有辩题投票已提交！");
+                    const msgDiv = document.getElementById("msg");
+                    msgDiv.innerText = "✅ 投票已提交，感谢参与！";
+                    msgDiv.style.display = "block";
+                }
             };
-        } else {
-            container.innerHTML = `<div class="card" style="text-align:center;"><h2>⏳ 请等待管理员下一步操作</h2><p style="color: #64748b;">系统会自动刷新...</p><div class="notice-text">📢 结果公布在会议中</div></div>`;
+        }
+        else {
+            // waiting 状态
+            container.innerHTML = `
+                <div class="card" style="text-align:center;">
+                    <h2>⏳ 请等待管理员下一步操作</h2>
+                    <p style="color: #64748b;">系统会自动刷新...</p>
+                    <div class="notice-text">📢 结果公布在会议中</div>
+                </div>
+            `;
         }
     }
 
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 同步数据
     async function sync() {
         const remote = await loadData();
         if (remote) {
+            // 合并数据，保留已有结构
             appData = { ...appData, ...remote };
+            // 确保 topicVotes 结构完整
+            if (!appData.topicVotes) appData.topicVotes = {};
+            if (!appData.debateVotes) appData.debateVotes = {};
+            if (!appData.pkVotes) appData.pkVotes = {};
+            if (!appData.allowedVoters) appData.allowedVoters = [];
+            if (!appData.positions) appData.positions = [];
             renderVoterUI();
         }
     }
-    setInterval(sync, 3000);
+
+    // 启动定时同步（每10秒）
+    setInterval(sync, 100000);
     sync();
 </script>
 </body>
