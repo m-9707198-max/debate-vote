@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>辩论赛投票</title>
+    <title>辩论赛投票系统 - 投票人界面</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -24,7 +24,6 @@
             font-size: 1.8rem;
             margin-bottom: 1rem;
             text-align: center;
-            color: #1e293b;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 0.5rem;
         }
@@ -48,12 +47,6 @@
             border: 1px solid #cbd5e1;
             border-radius: 0.5rem;
             font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
         }
         button {
             background: #3b82f6;
@@ -64,20 +57,18 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 1rem;
-            transition: background 0.1s;
         }
-        button:active { transform: scale(0.98); }
         button:disabled {
             background: #94a3b8;
             cursor: not-allowed;
         }
-        .candidate-list, .topics-area {
+        .candidate-list, .topics-area, .winner-area {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
             margin: 1rem 0;
         }
-        .candidate-item, .topic-item {
+        .candidate-item, .topic-item, .winner-item {
             background: #f8fafc;
             padding: 0.8rem 1rem;
             border-radius: 0.5rem;
@@ -86,10 +77,7 @@
             align-items: center;
             border: 1px solid #e2e8f0;
         }
-        .vote-option {
-            display: flex;
-            gap: 1rem;
-        }
+        .vote-option { display: flex; gap: 1rem; }
         .status-msg {
             background: #f1f5f9;
             padding: 1rem;
@@ -108,18 +96,6 @@
             color: #dc2626;
             border-left: 4px solid #dc2626;
         }
-        .info-msg {
-            background: #e3f2fd;
-            color: #1565c0;
-            border-left: 4px solid #1565c0;
-        }
-        .notice-text {
-            color: #ef4444;
-            font-weight: bold;
-            margin-top: 1rem;
-            font-size: 1rem;
-            text-align: center;
-        }
         .fixed-red-hint {
             color: #dc2626;
             background: #fee2e2;
@@ -130,18 +106,28 @@
             margin-bottom: 1rem;
             font-weight: 500;
         }
+        .notice-text {
+            color: #ef4444;
+            font-weight: bold;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        @media (max-width: 700px) {
+            .candidate-item, .topic-item, .winner-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .vote-option { margin-top: 0.5rem; }
+        }
     </style>
 </head>
 <body>
 <div class="container" id="voterContent">
     <div class="card" style="text-align:center;">
         <h2>⏳ 加载中...</h2>
-        <p style="color: #64748b;">正在同步投票系统，请稍候</p>
+        <p>正在同步投票系统，请稍候</p>
     </div>
 </div>
 
 <script>
-    // ========== 多备用 API 配置 ==========
+    // ========== API 配置（双备用） ==========
     const API_CONFIGS = [
         { apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC", binId: "69c6e9f0aa77b81da9286fee" },
         { apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6", binId: "69c6fdadc3097a1dd569be7c" }
@@ -157,19 +143,15 @@
         topicVotes: {},
         tieCandidates: [],
         pkModeActive: false,
-        allowedVoters: []
+        allowedVoters: [],
+        winnerTopic: "本次辩论的胜方",
+        winnerVotes: {}
     };
 
     let confirmedName = "";
     let tempName = "";
     let isSubmitting = false;
-
-    // 存储用户当前的选择（用于同步后恢复）
-    let pendingSelections = {
-        debate: null,
-        pk: null,
-        topics: {}
-    };
+    let pendingSelections = { debate: null, pk: null, topics: {}, winner: null };
 
     // ========== 通用请求函数 ==========
     async function requestWithFallback(method, data = null) {
@@ -206,15 +188,12 @@
         return r.success;
     }
 
-    // 工具函数
     function getActiveDebaters() {
         return (appData.positions || []).filter(p => p.name && p.name.trim() !== "");
     }
-
     function getActiveTopics() {
         return (appData.topics || []).filter(t => t.title && t.title.trim() !== "");
     }
-
     function hasUserVoted(name, type) {
         if (!name) return false;
         const n = name.trim();
@@ -226,9 +205,9 @@
             }
             return false;
         }
+        if (type === 'winner') return !!appData.winnerVotes[n];
         return false;
     }
-
     function getUserVoteInfo(name, type) {
         const n = name.trim();
         if (type === 'debate') {
@@ -241,9 +220,11 @@
             const d = getActiveDebaters().find(p => p.key === k);
             return d ? `${d.label} · ${d.name}` : "未知";
         }
+        if (type === 'winner') {
+            return appData.winnerVotes[n] === 'pro' ? '正方' : '反方';
+        }
         return "";
     }
-
     function isInWhitelist(name) {
         if (!name) return false;
         const allowed = (appData.allowedVoters || []).map(s => s.trim());
@@ -266,10 +247,12 @@
                 const sel = document.querySelector(`input[name="topic_${t.id}"]:checked`);
                 pendingSelections.topics[t.id] = sel ? sel.value : null;
             }
+        } else if (phase === "winnerVoting") {
+            const sel = document.querySelector('input[name="winnerVote"]:checked');
+            pendingSelections.winner = sel ? sel.value : null;
         }
     }
 
-    // 恢复之前的选择
     function restoreSelections() {
         const phase = appData.phase;
         if (phase === "debateVoting") {
@@ -290,15 +273,19 @@
                     if (radio) radio.checked = true;
                 }
             }
+        } else if (phase === "winnerVoting") {
+            if (pendingSelections.winner) {
+                const radio = document.querySelector(`input[name="winnerVote"][value="${pendingSelections.winner}"]`);
+                if (radio) radio.checked = true;
+            }
         }
     }
 
-    // 显示已投票结果（无姓名框，直接替换整个界面）
+    // 显示已投票结果
     function renderVotedResult() {
         const container = document.getElementById("voterContent");
         const phase = appData.phase;
-        let title = "";
-        let content = "";
+        let title = "", content = "";
         if (phase === "debateVoting") {
             title = "🏆 最佳辩手投票";
             const info = getUserVoteInfo(confirmedName, 'debate');
@@ -310,20 +297,15 @@
         } else if (phase === "topicVoting") {
             title = "📋 辩题投票";
             content = `✅ 您已参与投票<br>结果将在会议中公布`;
+        } else if (phase === "winnerVoting") {
+            title = "🏅 胜方投票";
+            const info = getUserVoteInfo(confirmedName, 'winner');
+            content = `✅ 您已参与投票<br>您投给了：${info}<br>结果将在会议中公布`;
         }
-        container.innerHTML = `
-            <div class="card" style="text-align:center;">
-                <h2>${title}</h2>
-                <div class="status-msg success-msg">${content}</div>
-            </div>
-        `;
+        container.innerHTML = `<div class="card" style="text-align:center;"><h2>${title}</h2><div class="status-msg success-msg">${content}</div></div>`;
     }
 
-    // 构建未投票界面（包含姓名确认框和投票选项），但姓名框是静态的，不会随同步重绘
-    let nameInput = null;
-    let confirmBtn = null;
-    let nameHint = null;
-
+    // 构建未投票界面
     function buildVotingUI() {
         const container = document.getElementById("voterContent");
         const phase = appData.phase;
@@ -331,6 +313,7 @@
         if (phase === "debateVoting") title = "🏆 最佳辩手投票";
         else if (phase === "pkVoting") title = "⚔️ 平票PK投票";
         else if (phase === "topicVoting") title = "📋 辩题投票";
+        else if (phase === "winnerVoting") title = "🏅 胜方投票";
 
         container.innerHTML = `
             <div class="card">
@@ -351,60 +334,51 @@
             </div>
         `;
 
-        // 获取元素引用，但不再重复绑定事件（只需绑定一次）
-        if (!nameInput) {
-            nameInput = document.getElementById("voterNameInput");
-            confirmBtn = document.getElementById("confirmNameBtn");
-            nameHint = document.getElementById("nameHint");
+        const nameInput = document.getElementById("voterNameInput");
+        const confirmBtn = document.getElementById("confirmNameBtn");
+        const nameHint = document.getElementById("nameHint");
 
-            nameInput.addEventListener("input", (e) => {
-                tempName = e.target.value.trim();
-                if (nameHint) nameHint.style.display = "none";
-            });
-
-            confirmBtn.onclick = async () => {
-                const name = tempName;
-                if (!name) {
-                    if (nameHint) { nameHint.innerText = "⚠️ 请输入姓名"; nameHint.style.display = "block"; }
-                    return;
-                }
-                if (!isInWhitelist(name)) {
-                    if (nameHint) { nameHint.innerText = "❌ 您的姓名不在投票白名单中，无法参与投票。"; nameHint.style.display = "block"; }
-                    return;
-                }
-                let voteType = "";
-                if (appData.phase === "debateVoting") voteType = "debate";
-                else if (appData.phase === "pkVoting") voteType = "pk";
-                else if (appData.phase === "topicVoting") voteType = "topic";
-                if (hasUserVoted(name, voteType)) {
-                    confirmedName = name;
-                    renderVotedResult();
-                    return;
-                }
-                confirmedName = name;
-                updateOptionsArea();
-            };
-        } else {
-            // 如果已经存在，只需更新输入框的值
-            nameInput.value = tempName;
+        nameInput.addEventListener("input", (e) => {
+            tempName = e.target.value.trim();
             nameHint.style.display = "none";
-        }
+        });
+
+        confirmBtn.onclick = async () => {
+            const name = tempName;
+            if (!name) {
+                nameHint.innerText = "⚠️ 请输入姓名";
+                nameHint.style.display = "block";
+                return;
+            }
+            if (!isInWhitelist(name)) {
+                nameHint.innerText = "❌ 您的姓名不在投票白名单中，无法参与投票。";
+                nameHint.style.display = "block";
+                return;
+            }
+            let voteType = "";
+            if (phase === "debateVoting") voteType = "debate";
+            else if (phase === "pkVoting") voteType = "pk";
+            else if (phase === "topicVoting") voteType = "topic";
+            else if (phase === "winnerVoting") voteType = "winner";
+            if (hasUserVoted(name, voteType)) {
+                confirmedName = name;
+                renderVotedResult();
+                return;
+            }
+            confirmedName = name;
+            updateOptionsArea();
+        };
 
         updateOptionsArea();
     }
 
-    // 更新投票选项区域（仅在未投票且已确认姓名时调用）
     function updateOptionsArea() {
         const optionsContainer = document.getElementById("voteOptionsContainer");
         if (!optionsContainer) return;
         const phase = appData.phase;
 
         if (!confirmedName) {
-            optionsContainer.innerHTML = `
-                <div class="fixed-red-hint">
-                    ⚠️ 请输入姓名并点击【确认姓名】按钮后，方可看到投票选项
-                </div>
-            `;
+            optionsContainer.innerHTML = `<div class="fixed-red-hint">⚠️ 请输入姓名并点击【确认姓名】按钮后，方可看到投票选项</div>`;
             return;
         }
 
@@ -412,14 +386,13 @@
         if (phase === "debateVoting") voteType = "debate";
         else if (phase === "pkVoting") voteType = "pk";
         else if (phase === "topicVoting") voteType = "topic";
+        else if (phase === "winnerVoting") voteType = "winner";
 
-        // 已投票：直接切换到结果界面（无姓名框）
         if (hasUserVoted(confirmedName, voteType)) {
             renderVotedResult();
             return;
         }
 
-        // 未投票，显示选项
         if (phase === "debateVoting") {
             const debaters = getActiveDebaters();
             if (debaters.length === 0) {
@@ -432,9 +405,7 @@
                 </div>
                 <button id="submitDebateVote">提交投票</button>
             `;
-            // 恢复之前的选择
             restoreSelections();
-            // 监听选项变化
             document.querySelectorAll('input[name="debateVote"]').forEach(radio => {
                 radio.addEventListener('change', () => {
                     const selected = document.querySelector('input[name="debateVote"]:checked');
@@ -453,7 +424,7 @@
                     try {
                         appData.debateVotes[confirmedName] = selected.value;
                         if (await pushToRemote()) {
-                            renderVotedResult();  // 提交后直接显示结果，姓名框消失
+                            renderVotedResult();
                         } else {
                             alert("保存失败，请稍后重试");
                             delete appData.debateVotes[confirmedName];
@@ -575,9 +546,54 @@
                 };
             }
         }
+        else if (phase === "winnerVoting") {
+            optionsContainer.innerHTML = `
+                <div class="winner-area">
+                    <div class="winner-item">
+                        <span>正方</span>
+                        <label><input type="radio" name="winnerVote" value="pro"> 选择</label>
+                    </div>
+                    <div class="winner-item">
+                        <span>反方</span>
+                        <label><input type="radio" name="winnerVote" value="con"> 选择</label>
+                    </div>
+                </div>
+                <button id="submitWinnerVote">提交投票</button>
+            `;
+            restoreSelections();
+            document.querySelectorAll('input[name="winnerVote"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const selected = document.querySelector('input[name="winnerVote"]:checked');
+                    pendingSelections.winner = selected ? selected.value : null;
+                });
+            });
+            const btn = document.getElementById("submitWinnerVote");
+            if (btn) {
+                btn.onclick = async () => {
+                    if (isSubmitting) return;
+                    const selected = document.querySelector('input[name="winnerVote"]:checked');
+                    if (!selected) return alert("请选择正方或反方");
+                    isSubmitting = true;
+                    btn.disabled = true;
+                    btn.textContent = "提交中...";
+                    try {
+                        appData.winnerVotes[confirmedName] = selected.value;
+                        if (await pushToRemote()) {
+                            renderVotedResult();
+                        } else {
+                            alert("保存失败，请稍后重试");
+                            delete appData.winnerVotes[confirmedName];
+                        }
+                    } finally {
+                        isSubmitting = false;
+                        btn.disabled = false;
+                        btn.textContent = "提交投票";
+                    }
+                };
+            }
+        }
     }
 
-    // 主渲染入口
     function renderUI() {
         if (appData.phase === "waiting") {
             document.getElementById("voterContent").innerHTML = `
@@ -594,8 +610,8 @@
         if (appData.phase === "debateVoting") voteType = "debate";
         else if (appData.phase === "pkVoting") voteType = "pk";
         else if (appData.phase === "topicVoting") voteType = "topic";
+        else if (appData.phase === "winnerVoting") voteType = "winner";
 
-        // 如果已投票，直接显示结果界面
         if (confirmedName && hasUserVoted(confirmedName, voteType)) {
             renderVotedResult();
         } else {
@@ -603,26 +619,14 @@
         }
     }
 
-    function escapeHtml(str) {
-        if (!str) return "";
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
+    function escapeHtml(s) { return s ? s.replace(/[&<>]/g, function(m) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]; }) : ""; }
 
-    // 同步数据
     let isSyncing = false;
     async function sync() {
         if (isSyncing) return;
         isSyncing = true;
         try {
-            // 在同步前，保存当前选项区域中的选择（如果存在）
-            if (document.getElementById("voteOptionsContainer")) {
-                captureSelections();
-            }
+            if (document.getElementById("voteOptionsContainer")) captureSelections();
             const remote = await loadData();
             if (remote) {
                 const oldPhase = appData.phase;
@@ -633,30 +637,26 @@
                 if (!appData.allowedVoters) appData.allowedVoters = [];
                 if (!appData.positions) appData.positions = [];
                 if (!appData.topics) appData.topics = [];
+                if (!appData.winnerVotes) appData.winnerVotes = {};
 
                 if (oldPhase !== appData.phase) {
-                    // 阶段变化，重置状态
                     confirmedName = "";
                     tempName = "";
-                    pendingSelections = { debate: null, pk: null, topics: {} };
-                    // 重新构建整个界面（会重新创建姓名框，但之后不会再重建）
+                    pendingSelections = { debate: null, pk: null, topics: {}, winner: null };
                     renderUI();
                 } else {
                     let voteType = "";
                     if (appData.phase === "debateVoting") voteType = "debate";
                     else if (appData.phase === "pkVoting") voteType = "pk";
                     else if (appData.phase === "topicVoting") voteType = "topic";
+                    else if (appData.phase === "winnerVoting") voteType = "winner";
                     if (confirmedName && hasUserVoted(confirmedName, voteType)) {
                         renderVotedResult();
                     } else {
-                        // 未投票，只需更新选项区域，姓名框不动
-                        if (document.getElementById("voteOptionsContainer")) {
-                            updateOptionsArea();
-                            // 恢复之前的选择
-                            setTimeout(() => restoreSelections(), 50);
-                        } else {
-                            renderUI();
-                        }
+                        renderUI();
+                        setTimeout(() => {
+                            if (document.getElementById("voteOptionsContainer")) restoreSelections();
+                        }, 50);
                     }
                 }
             } else {
