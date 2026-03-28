@@ -75,6 +75,7 @@
             </div>
         </div>
         <input type="text" id="debateTopicInput" placeholder="辩题标题">
+        <!-- 这里是 8 个辩手姓名输入框，请确认能看到！ -->
         <div id="positionsContainer" class="positions-grid"></div>
         <button id="applyDebaters">保存辩手配置</button>
         <div id="tieArea"></div>
@@ -93,6 +94,7 @@
                 <button id="endTopicsBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
             </div>
         </div>
+        <!-- 这里是 3 个辩题标题输入框，请确认能看到！ -->
         <div id="topicsList"></div>
         <hr>
         <h4>📊 辩题统计（含投票人）</h4>
@@ -293,7 +295,7 @@
                 topics.map(t => `<div class="preview-item"><strong>${t.title}</strong><br><span style="font-size:0.8rem;">⭕赞成 ⭕反对 ⭕弃权</span></div>`).join('') +
                 `<button disabled>提交投票</button>`;
         } else {
-            preview.innerHTML = 等待管理员下一步操作</h4><div class="notice-text">📢 结果公布在会议中</div></div>`;
+            preview.innerHTML = `<div style="text-align:center;"><h4>⏳ 等待管理员操作</h4><div class="notice-text">📢 结果公布在会议中</div></div>`;
         }
 
         // 辩手统计
