@@ -112,6 +112,13 @@
             margin-top: 1rem;
             text-align: center;
         }
+        .name-section {
+            background: #fef9e3;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
         @media (max-width: 700px) {
             .candidate-item, .topic-item, .winner-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
             .vote-option { margin-top: 0.5rem; }
@@ -149,7 +156,6 @@
     };
 
     let confirmedName = "";
-    let tempName = "";
     let isSubmitting = false;
     let pendingSelections = { debate: null, pk: null, topics: {}, winner: null };
 
@@ -305,73 +311,7 @@
         container.innerHTML = `<div class="card" style="text-align:center;"><h2>${title}</h2><div class="status-msg success-msg">${content}</div></div>`;
     }
 
-    // 构建未投票界面
-    function buildVotingUI() {
-        const container = document.getElementById("voterContent");
-        const phase = appData.phase;
-        let title = "";
-        if (phase === "debateVoting") title = "🏆 最佳辩手投票";
-        else if (phase === "pkVoting") title = "⚔️ 平票PK投票";
-        else if (phase === "topicVoting") title = "📋 辩题投票";
-        else if (phase === "winnerVoting") title = "🏅 胜方投票";
-
-        container.innerHTML = `
-            <div class="card">
-                <h2>${title}</h2>
-                <div class="name-section" style="background:#fef9e3; border-left:4px solid #f59e0b; padding:1rem; border-radius:0.5rem; margin-bottom:1rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
-                        <div style="flex:2; min-width:150px;">
-                            <label style="margin-bottom:0.2rem;">您的姓名</label>
-                            <input type="text" id="voterNameInput" placeholder="请输入您的姓名" value="${escapeHtml(tempName)}">
-                        </div>
-                        <div style="flex:1;">
-                            <button id="confirmNameBtn" style="margin-top:1.6rem;">确认姓名</button>
-                        </div>
-                    </div>
-                    <div id="nameHint" class="status-msg error-msg" style="margin-top:0.5rem; display:none;"></div>
-                </div>
-                <div id="voteOptionsContainer"></div>
-            </div>
-        `;
-
-        const nameInput = document.getElementById("voterNameInput");
-        const confirmBtn = document.getElementById("confirmNameBtn");
-        const nameHint = document.getElementById("nameHint");
-
-        nameInput.addEventListener("input", (e) => {
-            tempName = e.target.value.trim();
-            nameHint.style.display = "none";
-        });
-
-        confirmBtn.onclick = async () => {
-            const name = tempName;
-            if (!name) {
-                nameHint.innerText = "⚠️ 请输入姓名";
-                nameHint.style.display = "block";
-                return;
-            }
-            if (!isInWhitelist(name)) {
-                nameHint.innerText = "❌ 您的姓名不在投票白名单中，无法参与投票。";
-                nameHint.style.display = "block";
-                return;
-            }
-            let voteType = "";
-            if (phase === "debateVoting") voteType = "debate";
-            else if (phase === "pkVoting") voteType = "pk";
-            else if (phase === "topicVoting") voteType = "topic";
-            else if (phase === "winnerVoting") voteType = "winner";
-            if (hasUserVoted(name, voteType)) {
-                confirmedName = name;
-                renderVotedResult();
-                return;
-            }
-            confirmedName = name;
-            updateOptionsArea();
-        };
-
-        updateOptionsArea();
-    }
-
+    // 更新选项区域（不重建姓名框）
     function updateOptionsArea() {
         const optionsContainer = document.getElementById("voteOptionsContainer");
         if (!optionsContainer) return;
@@ -594,9 +534,18 @@
         }
     }
 
-    function renderUI() {
-        if (appData.phase === "waiting") {
-            document.getElementById("voterContent").innerHTML = `
+    // 构建完整界面（仅首次调用，之后只更新选项区域）
+    function buildMainUI() {
+        const container = document.getElementById("voterContent");
+        const phase = appData.phase;
+        let title = "";
+        if (phase === "debateVoting") title = "🏆 最佳辩手投票";
+        else if (phase === "pkVoting") title = "⚔️ 平票PK投票";
+        else if (phase === "topicVoting") title = "📋 辩题投票";
+        else if (phase === "winnerVoting") title = "🏅 胜方投票";
+        else {
+            // waiting 状态
+            container.innerHTML = `
                 <div class="card" style="text-align:center;">
                     <h2>⏳ 请等待管理员下一步操作</h2>
                     <p style="color: #64748b;">系统会自动刷新...</p>
@@ -606,27 +555,78 @@
             return;
         }
 
-        let voteType = "";
-        if (appData.phase === "debateVoting") voteType = "debate";
-        else if (appData.phase === "pkVoting") voteType = "pk";
-        else if (appData.phase === "topicVoting") voteType = "topic";
-        else if (appData.phase === "winnerVoting") voteType = "winner";
+        container.innerHTML = `
+            <div class="card">
+                <h2>${title}</h2>
+                <div class="name-section">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                        <div style="flex:2; min-width:150px;">
+                            <label style="margin-bottom:0.2rem;">您的姓名</label>
+                            <input type="text" id="voterNameInput" placeholder="请输入您的姓名" value="${escapeHtml(confirmedName)}">
+                        </div>
+                        <div style="flex:1;">
+                            <button id="confirmNameBtn" style="margin-top:1.6rem;">确认姓名</button>
+                        </div>
+                    </div>
+                    <div id="nameHint" class="status-msg error-msg" style="margin-top:0.5rem; display:none;"></div>
+                </div>
+                <div id="voteOptionsContainer"></div>
+            </div>
+        `;
 
-        if (confirmedName && hasUserVoted(confirmedName, voteType)) {
-            renderVotedResult();
-        } else {
-            buildVotingUI();
-        }
+        const nameInput = document.getElementById("voterNameInput");
+        const confirmBtn = document.getElementById("confirmNameBtn");
+        const nameHint = document.getElementById("nameHint");
+
+        // 监听输入，不重绘整个界面
+        nameInput.addEventListener("input", (e) => {
+            const tempName = e.target.value.trim();
+            nameHint.style.display = "none";
+            // 不自动确认，只保存临时变量，由确认按钮触发校验
+            window.tempName = tempName;
+        });
+
+        confirmBtn.onclick = async () => {
+            const name = document.getElementById("voterNameInput").value.trim();
+            if (!name) {
+                nameHint.innerText = "⚠️ 请输入姓名";
+                nameHint.style.display = "block";
+                return;
+            }
+            if (!isInWhitelist(name)) {
+                nameHint.innerText = "❌ 您的姓名不在投票白名单中，无法参与投票。";
+                nameHint.style.display = "block";
+                return;
+            }
+            let voteType = "";
+            if (appData.phase === "debateVoting") voteType = "debate";
+            else if (appData.phase === "pkVoting") voteType = "pk";
+            else if (appData.phase === "topicVoting") voteType = "topic";
+            else if (appData.phase === "winnerVoting") voteType = "winner";
+            if (hasUserVoted(name, voteType)) {
+                confirmedName = name;
+                renderVotedResult();
+                return;
+            }
+            confirmedName = name;
+            updateOptionsArea();
+        };
+
+        updateOptionsArea();
     }
 
     function escapeHtml(s) { return s ? s.replace(/[&<>]/g, function(m) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]; }) : ""; }
 
+    // 同步数据
     let isSyncing = false;
     async function sync() {
         if (isSyncing) return;
         isSyncing = true;
         try {
-            if (document.getElementById("voteOptionsContainer")) captureSelections();
+            // 在同步前保存当前选项区域的选择
+            if (document.getElementById("voteOptionsContainer")) {
+                captureSelections();
+            }
             const remote = await loadData();
             if (remote) {
                 const oldPhase = appData.phase;
@@ -640,10 +640,10 @@
                 if (!appData.winnerVotes) appData.winnerVotes = {};
 
                 if (oldPhase !== appData.phase) {
+                    // 阶段变化，重建整个界面
                     confirmedName = "";
-                    tempName = "";
                     pendingSelections = { debate: null, pk: null, topics: {}, winner: null };
-                    renderUI();
+                    buildMainUI();
                 } else {
                     let voteType = "";
                     if (appData.phase === "debateVoting") voteType = "debate";
@@ -653,14 +653,13 @@
                     if (confirmedName && hasUserVoted(confirmedName, voteType)) {
                         renderVotedResult();
                     } else {
-                        renderUI();
-                        setTimeout(() => {
-                            if (document.getElementById("voteOptionsContainer")) restoreSelections();
-                        }, 50);
+                        // 仅更新选项区域
+                        updateOptionsArea();
+                        setTimeout(() => restoreSelections(), 50);
                     }
                 }
             } else {
-                renderUI();
+                buildMainUI();
             }
         } catch(e) { console.error(e); }
         finally { isSyncing = false; }
