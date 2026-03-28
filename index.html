@@ -60,6 +60,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         .vote-option {
             display: flex;
@@ -74,6 +76,10 @@
             color: #10b981;
             font-weight: bold;
         }
+        .error-msg {
+            background: #fee2e2;
+            color: #dc2626;
+        }
         .notice-text {
             color: #ef4444;
             font-weight: bold;
@@ -85,7 +91,9 @@
             .candidate-item, .topic-item {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 0.5rem;
+            }
+            .vote-option {
+                margin-top: 0.5rem;
             }
         }
     </style>
@@ -101,7 +109,7 @@
 </div>
 
 <script>
-    // ========== 多备用 API 配置（与管理员控制台一致） ==========
+    // ========== 多备用 API 配置 ==========
     const API_CONFIGS = [
         {
             apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC",
@@ -175,18 +183,21 @@
         return (appData.positions || []).filter(p => p.name && p.name.trim() !== "");
     }
 
+    // 获取有效的辩题（标题不为空）
+    function getActiveTopics() {
+        return (appData.topics || []).filter(t => t.title && t.title.trim() !== "");
+    }
+
     // 检查投票资格（白名单 + 重复校验）
     function checkVoterEligibility(name, voteType) {
         if (!name) return false;
         const cleanName = name.trim();
         const allowedList = (appData.allowedVoters || []).map(n => n.trim());
-        // 如果白名单不为空且不包含该姓名，则拒绝
         if (allowedList.length > 0 && !allowedList.includes(cleanName)) return false;
-        // 重复校验
         if (voteType === 'debate' && appData.debateVotes[cleanName]) return false;
         if (voteType === 'pk' && appData.pkVotes[cleanName]) return false;
         if (voteType === 'topic') {
-            for (let t of appData.topics) {
+            for (let t of getActiveTopics()) {
                 if (appData.topicVotes[t.id] && appData.topicVotes[t.id][cleanName]) return false;
             }
         }
@@ -196,8 +207,9 @@
     // 渲染投票人界面
     function renderVoterUI() {
         const container = document.getElementById("voterContent");
-        if (container.dataset.phase === appData.phase) return; // 避免频繁重绘
+        if (container.dataset.phase === appData.phase && container.dataset.lastTopicCount === getActiveTopics().length) return;
         container.dataset.phase = appData.phase;
+        container.dataset.lastTopicCount = getActiveTopics().length;
 
         if (appData.phase === "debateVoting") {
             const debaters = getActiveDebaters();
@@ -262,8 +274,9 @@
             };
         }
         else if (appData.phase === "topicVoting") {
-            if (!appData.topics || appData.topics.length === 0) {
-                container.innerHTML = `<div class="card" style="text-align:center;"><h2>📋 辩题投票</h2><p>暂无辩题，请联系管理员配置。</p></div>`;
+            const activeTopics = getActiveTopics();
+            if (activeTopics.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center;"><h2>📋 辩题投票</h2><p>暂无有效辩题，请联系管理员配置。</p></div>`;
                 return;
             }
             container.innerHTML = `
@@ -271,12 +284,12 @@
                 <div class="card">
                     <div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="请输入姓名"></div>
                     <div class="topics-area" id="topicsArea"></div>
-                    <button id="topicVoteBtn">提交投票</button>
+                    <button id="topicVoteBtn">提交全部辩题投票</button>
                     <div id="msg" class="status-msg" style="display:none;"></div>
                 </div>
             `;
             const topicsDiv = document.getElementById("topicsArea");
-            topicsDiv.innerHTML = appData.topics.map(t => `
+            topicsDiv.innerHTML = activeTopics.map(t => `
                 <div class="topic-item">
                     <div><strong>${escapeHtml(t.title)}</strong></div>
                     <div class="vote-option">
@@ -289,28 +302,50 @@
             document.getElementById("topicVoteBtn").onclick = async () => {
                 const name = document.getElementById("voterName").value;
                 if (!name.trim()) return alert("请输入姓名");
-                if (!checkVoterEligibility(name, 'topic')) return alert("投票失败：您不在白名单中或已投过某些辩题");
-                let allSelected = true;
-                for (let t of appData.topics) {
+                
+                // 检查是否已投过任何辩题（防重复）
+                for (let t of activeTopics) {
+                    if (appData.topicVotes[t.id] && appData.topicVotes[t.id][name.trim()]) {
+                        return alert(`您已经投过辩题“${t.title}”，不能重复投票。`);
+                    }
+                }
+                
+                // 检查所有辩题是否都已选择选项
+                let missingTopics = [];
+                for (let t of activeTopics) {
                     const selected = document.querySelector(`input[name="topic_${t.id}"]:checked`);
                     if (!selected) {
-                        alert(`请为辩题「${t.title}」选择一个选项`);
-                        allSelected = false;
-                        break;
+                        missingTopics.push(t.title);
                     }
+                }
+                
+                if (missingTopics.length > 0) {
+                    alert(`请完成所有辩题的选择：\n${missingTopics.join('\n')}\n\n每个辩题都必须选择“赞成”、“反对”或“弃权”。`);
+                    const msgDiv = document.getElementById("msg");
+                    msgDiv.innerText = "⚠️ 请完成所有辩题的选择后再提交";
+                    msgDiv.className = "status-msg error-msg";
+                    msgDiv.style.display = "block";
+                    return;
+                }
+                
+                // 全部选择完成，保存投票
+                for (let t of activeTopics) {
+                    const selected = document.querySelector(`input[name="topic_${t.id}"]:checked`);
+                    appData.topicVotes[t.id] = appData.topicVotes[t.id] || {};
                     appData.topicVotes[t.id][name.trim()] = selected.value;
                 }
-                if (allSelected) {
-                    await pushToRemote();
-                    alert("所有辩题投票已提交！");
-                    const msgDiv = document.getElementById("msg");
-                    msgDiv.innerText = "✅ 投票已提交，感谢参与！";
-                    msgDiv.style.display = "block";
-                }
+                
+                await pushToRemote();
+                alert("所有辩题投票已成功提交！");
+                const msgDiv = document.getElementById("msg");
+                msgDiv.innerText = "✅ 投票已提交，感谢参与！";
+                msgDiv.className = "status-msg";
+                msgDiv.style.display = "block";
+                // 清空所有选中，防止重复提交（但已通过校验拦截）
+                document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
             };
         }
         else {
-            // waiting 状态
             container.innerHTML = `
                 <div class="card" style="text-align:center;">
                     <h2>⏳ 请等待管理员下一步操作</h2>
@@ -335,15 +370,20 @@
     async function sync() {
         const remote = await loadData();
         if (remote) {
-            // 合并数据，保留已有结构
+            const oldTopicCount = getActiveTopics().length;
             appData = { ...appData, ...remote };
-            // 确保 topicVotes 结构完整
             if (!appData.topicVotes) appData.topicVotes = {};
             if (!appData.debateVotes) appData.debateVotes = {};
             if (!appData.pkVotes) appData.pkVotes = {};
             if (!appData.allowedVoters) appData.allowedVoters = [];
             if (!appData.positions) appData.positions = [];
-            renderVoterUI();
+            if (!appData.topics) appData.topics = [];
+            // 当辩题数量变化时强制刷新界面
+            if (getActiveTopics().length !== oldTopicCount) {
+                renderVoterUI();
+            } else {
+                renderVoterUI();
+            }
         }
     }
 
