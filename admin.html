@@ -42,6 +42,9 @@
         .voter-names { font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; margin-top: 0.2rem; }
         
         .history-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.8rem; }
+
+        /* 新增：平票横幅提示样式 */
+        #tieAlertBanner { display: none; background: #fef2f2; border: 2px solid #f87171; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.2rem; font-weight: bold; line-height: 1.5; text-align: center; }
     </style>
 </head>
 <body>
@@ -60,6 +63,8 @@
                 </div>
             </h2>
             
+            <div id="tieAlertBanner"></div>
+
             <div class="btn-grid">
                 <button class="btn-primary" onclick="setPhase('debateVoting')">🏆 开启最佳辩手投票</button>
                 <button class="btn-primary" onclick="setPhase('topicVoting')">📋 开启辩题投票</button>
@@ -192,6 +197,7 @@
     async function setPhase(newPhase) {
         if (isSaving) return;
         
+        // 结束最佳辩手投票时检测平票
         if (newPhase === 'waiting' && appData.phase === 'debateVoting') {
             const voteCounts = {};
             Object.values(appData.debateVotes || {}).forEach(v => { voteCounts[v] = (voteCounts[v] || 0) + 1; });
@@ -207,11 +213,13 @@
                     return p ? p.label + (p.name ? '('+p.name+')' : '') : k;
                 }).join(" 和 ");
                 
-                alert(`⚠️ 系统通知：出现平票！\n\n【${tiedNames}】均获得最高票 ${maxVotes} 票。\n\n系统已将他们自动放入PK名单。请关闭此提示后，手动点击【开启平票加赛(PK)】进行加赛！`);
+                alert(`⚠️ 系统通知：出现平票！\n\n【${tiedNames}】均获得最高票 ${maxVotes} 票。\n\n请查看左侧控制台平票提示，并点击【开启平票加赛(PK)】进行加赛！`);
                 
                 appData.tieCandidates = tiedKeys;
-                initConfigForm(); 
+            } else {
+                appData.tieCandidates = []; // 没有平票则清空
             }
+            initConfigForm(); 
         }
         
         if (!confirm(`确定要将系统状态切换为: ${newPhase} 吗？`)) return;
@@ -295,8 +303,9 @@
         if (!confirm("⚠️ 确定要清空当前正在进行的【所有投票数据】吗？\n(注意：这不会删除右侧已保存的历史记录)")) return;
         isSaving = true;
         appData.debateVotes = {}; appData.pkVotes = {}; appData.topicVotes = {}; appData.winnerVotes = {};
+        appData.tieCandidates = []; // 重置时也清空平票名单
         const res = await requestWithFallback('PUT', appData);
-        if (res.success) { alert("✅ 票数已清空！"); renderResults(); }
+        if (res.success) { alert("✅ 票数已清空！"); initConfigForm(); updateStatusBadge(); renderResults(); }
         isSaving = false;
     }
 
@@ -304,6 +313,19 @@
         const badge = document.getElementById("currentStatusBadge");
         if (appData.phase === "waiting") { badge.className = "status-badge status-waiting"; badge.innerText = "⏸️ 投票已暂停 / 等待中"; }
         else { badge.className = "status-badge status-active"; badge.innerText = `▶️ 正在进行: ${appData.phase} 投票`; }
+
+        // 显示或隐藏平票横幅
+        const tieBanner = document.getElementById("tieAlertBanner");
+        if (appData.tieCandidates && appData.tieCandidates.length > 1) {
+            const tiedNames = appData.tieCandidates.map(k => {
+                const p = appData.positions.find(pos => pos.key === k);
+                return p ? p.label + (p.name ? '('+p.name+')' : '') : k;
+            }).join(" 和 ");
+            tieBanner.innerHTML = `⚠️ 计票完成：检测到平票<br><span style="font-size:1.1rem; color:#0f172a; margin: 0.5rem 0; display:inline-block;">【${tiedNames}】票数相同</span><br><span style="font-size:0.9rem; font-weight:normal; color:#dc2626;">已自动勾选右侧PK名单，请直接点击下方【开启平票加赛(PK)】</span>`;
+            tieBanner.style.display = "block";
+        } else {
+            tieBanner.style.display = "none";
+        }
     }
 
     function buildBar(label, count, totalCount) {
@@ -411,7 +433,12 @@
             appData.tieCandidates = Array.from(document.querySelectorAll('.pk-checkbox:checked')).map(cb => cb.value);
 
             const res = await requestWithFallback('PUT', appData);
-            if (res.success) { alert("✅ 配置保存成功！"); initConfigForm(); renderResults(); }
+            if (res.success) { 
+                alert("✅ 配置保存成功！"); 
+                initConfigForm(); 
+                updateStatusBadge(); // 重新检查是否要显示平票横幅
+                renderResults(); 
+            }
         } finally { isSaving = false; btn.innerText = "💾 保存所有配置"; }
     }
 
@@ -426,6 +453,7 @@
                     appData.topicVotes = res.data.topicVotes || {};
                     appData.winnerVotes = res.data.winnerVotes || {};
                     appData.history = res.data.history || [];
+                    appData.tieCandidates = res.data.tieCandidates || [];
                     updateStatusBadge(); renderResults(); renderHistory();
                 }
             } catch(e) {}
