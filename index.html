@@ -25,10 +25,16 @@
         .waiting-msg { text-align: center; color: #d97706; font-size: 1.2rem; font-weight: bold; padding: 3rem 0; }
         .hidden { display: none; }
         
-        /* 新增：修改姓名按钮的样式 */
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #e2e8f0; }
         .btn-logout { width: auto; padding: 0.4rem 0.8rem; background: #ef4444; font-size: 0.85rem; border-radius: 0.4rem; }
         .btn-logout:hover { background: #dc2626; }
+        
+        /* 投完票后的结果展示卡片样式 */
+        .vote-success-card { padding: 1.5rem 0; text-align: center; }
+        .vote-success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+        .vote-success-title { font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: bold; }
+        .vote-success-target { font-size: 1.4rem; font-weight: bold; color: #0f172a; margin-bottom: 1.5rem; background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; display: inline-block; width: 100%; box-sizing: border-box;}
+        .vote-success-footer { font-size: 1.05rem; color: #64748b; font-weight: normal; border-top: 1px dashed #cbd5e1; padding-top: 1.5rem; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -115,7 +121,6 @@
         }
     }
 
-    // 新增：修改姓名（退出）功能
     function logout() {
         currentUser = "";
         document.getElementById("votingSection").classList.add("hidden");
@@ -145,8 +150,19 @@
         let html = "";
         
         if (phase === "debateVoting") {
-            if ((appData.debateVotes || {})[currentUser]) {
-                content.innerHTML = `<div class="waiting-msg">✅ 您已成功投票给最佳辩手<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待该轮投票结束。</span></div>`; return;
+            const myVoteKey = (appData.debateVotes || {})[currentUser];
+            if (myVoteKey) {
+                const pos = (appData.positions || []).find(p => p.key === myVoteKey);
+                const targetText = pos ? `${pos.label} - ${pos.name}` : myVoteKey;
+                content.innerHTML = `
+                    <div class="vote-success-card">
+                        <div class="vote-success-icon">✅</div>
+                        <div class="vote-success-title" style="color:#2563eb;">您已成功完成【🏆 最佳辩手】投票</div>
+                        <div style="font-size:0.9rem; color:#64748b; margin-bottom:0.8rem;">您的投票对象是：</div>
+                        <div class="vote-success-target">${targetText}</div>
+                        <div class="vote-success-footer">📢 结果将在会议中公布</div>
+                    </div>`; 
+                return;
             }
             html += `<h3 style="color:#2563eb; margin-bottom:1rem;">🏆 评选最佳辩手</h3>`;
             appData.positions.forEach(pos => {
@@ -155,8 +171,19 @@
             html += `<button onclick="submitVote('debateVotes', getRadioValue('vote'))" style="margin-top:1rem;">确认投票</button>`;
         } 
         else if (phase === "pkVoting") {
-            if ((appData.pkVotes || {})[currentUser]) {
-                content.innerHTML = `<div class="waiting-msg">✅ 您的PK票已投出<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待该轮投票结束。</span></div>`; return;
+            const myPkVote = (appData.pkVotes || {})[currentUser];
+            if (myPkVote) {
+                const pos = (appData.positions || []).find(p => p.key === myPkVote);
+                const targetText = pos ? `${pos.label} - ${pos.name}` : myPkVote;
+                content.innerHTML = `
+                    <div class="vote-success-card">
+                        <div class="vote-success-icon">✅</div>
+                        <div class="vote-success-title" style="color:#d97706;">您已成功完成【⚔️ 平票加赛(PK)】投票</div>
+                        <div style="font-size:0.9rem; color:#64748b; margin-bottom:0.8rem;">您的投票对象是：</div>
+                        <div class="vote-success-target">${targetText}</div>
+                        <div class="vote-success-footer">📢 结果将在会议中公布</div>
+                    </div>`; 
+                return;
             }
             html += `<h3 style="color:#d97706; margin-bottom:1rem;">⚔️ 平票加赛 (PK)</h3>`;
             (appData.tieCandidates || []).forEach(candKey => {
@@ -166,8 +193,18 @@
             html += `<button onclick="submitVote('pkVotes', getRadioValue('vote'))" style="margin-top:1rem; background:#f59e0b;">确认投票</button>`;
         }
         else if (phase === "winnerVoting") {
-            if ((appData.winnerVotes || {})[currentUser]) {
-                content.innerHTML = `<div class="waiting-msg">✅ 您的胜负票已投出</div>`; return;
+            const myWinnerVote = (appData.winnerVotes || {})[currentUser];
+            if (myWinnerVote) {
+                const targetText = myWinnerVote === 'pro' ? '正方 胜' : '反方 胜';
+                content.innerHTML = `
+                    <div class="vote-success-card">
+                        <div class="vote-success-icon">✅</div>
+                        <div class="vote-success-title" style="color:#166534;">您已成功完成【🏅 胜负方】投票</div>
+                        <div style="font-size:0.9rem; color:#64748b; margin-bottom:0.8rem;">您的投票对象是：</div>
+                        <div class="vote-success-target">${targetText}</div>
+                        <div class="vote-success-footer">📢 结果将在会议中公布</div>
+                    </div>`; 
+                return;
             }
             html += `<h3 style="color:#166534; margin-bottom:1rem;">🏅 评选获胜方</h3>`;
             html += `<label class="radio-option"><input type="radio" name="vote" value="pro"> 正方 胜</label>`;
@@ -175,8 +212,28 @@
             html += `<button onclick="submitVote('winnerVotes', getRadioValue('vote'))" style="margin-top:1rem; background:#166534;">确认投票</button>`;
         }
         else if (phase === "topicVoting") {
-            if (Object.keys(appData.topicVotes || {}).some(topicId => appData.topicVotes[topicId][currentUser])) {
-                content.innerHTML = `<div class="waiting-msg">✅ 您的辩题表决已投出</div>`; return;
+            // 检查是否有任何关于辩题的投票
+            const myTopicVotes = [];
+            (appData.topics || []).forEach(t => {
+                const voteVal = (appData.topicVotes && appData.topicVotes[t.id]) ? appData.topicVotes[t.id][currentUser] : null;
+                if (voteVal) {
+                    let valText = voteVal === 'agree' ? '<span style="color:#166534;">赞成</span>' : (voteVal === 'disagree' ? '<span style="color:#dc2626;">反对</span>' : '<span style="color:#64748b;">弃权</span>');
+                    myTopicVotes.push(`<div style="font-size:0.95rem; color:#334155; margin-bottom:0.5rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem; text-align:left;">${t.title}：<strong>${valText}</strong></div>`);
+                }
+            });
+            
+            if (myTopicVotes.length > 0) {
+                content.innerHTML = `
+                    <div class="vote-success-card">
+                        <div class="vote-success-icon">✅</div>
+                        <div class="vote-success-title" style="color:#475569;">您已成功完成【📋 辩题表决】</div>
+                        <div style="font-size:0.9rem; color:#64748b; margin-bottom:0.8rem;">您的表决结果：</div>
+                        <div class="vote-success-target" style="padding:1rem; font-size:1rem;">
+                            ${myTopicVotes.join('')}
+                        </div>
+                        <div class="vote-success-footer">📢 结果将在会议中公布</div>
+                    </div>`; 
+                return;
             }
             html += `<h3 style="margin-bottom:1rem;">📋 辩题表决</h3>`;
             (appData.topics || []).forEach(t => {
@@ -184,7 +241,7 @@
                     html += `<div style="margin-bottom: 1.5rem; background: #f1f5f9; padding: 1rem; border-radius: 0.5rem;">
                         <p style="font-weight:bold; margin-bottom:0.8rem;">${t.title}</p>
                         <label style="display:inline-block; margin-right:1rem;"><input type="radio" name="${t.id}" value="agree"> 赞成</label>
-                        <label style="display:inline-block; margin-right:1rem;"><input type="radio" name="${t.id}" value="disagree"> 反反对</label>
+                        <label style="display:inline-block; margin-right:1rem;"><input type="radio" name="${t.id}" value="disagree"> 反对</label>
                         <label style="display:inline-block;"><input type="radio" name="${t.id}" value="abstain"> 弃权</label>
                     </div>`;
                 }
