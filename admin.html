@@ -41,9 +41,7 @@
         .bar-label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.2rem; }
         .voter-names { font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; margin-top: 0.2rem; }
         
-        .history-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.8rem; }
-
-        /* 新增：平票横幅提示样式 */
+        .history-item { background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
         #tieAlertBanner { display: none; background: #fef2f2; border: 2px solid #f87171; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.2rem; font-weight: bold; line-height: 1.5; text-align: center; }
     </style>
 </head>
@@ -68,7 +66,7 @@
             <div class="btn-grid">
                 <button class="btn-primary" onclick="setPhase('debateVoting')">🏆 开启最佳辩手投票</button>
                 <button class="btn-primary" onclick="setPhase('topicVoting')">📋 开启辩题投票</button>
-                <button class="btn-primary" onclick="setPhase('winnerVoting')">🏅 开启胜方投票</button>
+                <button class="btn-primary" onclick="setPhase('winnerVoting')">🏅 开启胜负方投票</button>
                 <button class="btn-warning" onclick="setPhase('pkVoting')">⚔️ 开启平票加赛(PK)</button>
                 
                 <button class="btn-stop" onclick="setPhase('waiting')">🛑 结束当前投票 (触发计票/进入等待界面)</button>
@@ -79,7 +77,7 @@
                     <input type="text" id="historyTitle" placeholder="输入本场名称(如:初赛第一场)" style="width: 200px; padding: 0.4rem;">
                     <button class="btn-primary btn-small" onclick="saveToHistory()">💾 保存当前至历史记录</button>
                 </div>
-                <button class="btn-danger btn-small" onclick="resetAllVotes()">🗑️ 清空当前票数</button>
+                <button class="btn-danger btn-small" onclick="resetAllVotes()">🗑️ 清空当前所有票数</button>
             </div>
         </div>
 
@@ -98,9 +96,6 @@
             <div style="background: #e2e8f0; padding: 1.5rem; border-radius: 1rem; display: flex; justify-content: center;">
                 <iframe src="index.html" style="width: 375px; height: 667px; border: 12px solid #0f172a; border-radius: 2rem; background: #fff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);"></iframe>
             </div>
-            <p style="text-align: center; font-size: 0.85rem; color: #ef4444; font-weight: bold; margin-top: 0.8rem;">
-                注意：必须将 admin.html 和 index.html 保存在电脑的同一个文件夹内，预览画面才能显示！
-            </p>
         </div>
     </div>
 
@@ -133,9 +128,9 @@
             <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="saveConfig()">💾 保存所有配置</button>
         </div>
 
-        <div class="card">
-            <h2>📁 历史记录</h2>
-            <div id="historyListContainer" style="max-height: 400px; overflow-y: auto;">
+        <div class="card" style="position: sticky; top: 1rem;">
+            <h2>📁 历史记录档案</h2>
+            <div id="historyListContainer" style="max-height: 600px; overflow-y: auto; padding-right: 0.5rem;">
                 <p style="color: #64748b; font-size: 0.9rem;">暂无保存的历史记录</p>
             </div>
         </div>
@@ -196,8 +191,13 @@
 
     async function setPhase(newPhase) {
         if (isSaving) return;
+
+        if (newPhase === 'debateVoting') {
+            appData.tieCandidates = [];
+            document.getElementById("tieAlertBanner").style.display = "none";
+            initConfigForm(); 
+        }
         
-        // 结束最佳辩手投票时检测平票
         if (newPhase === 'waiting' && appData.phase === 'debateVoting') {
             const voteCounts = {};
             Object.values(appData.debateVotes || {}).forEach(v => { voteCounts[v] = (voteCounts[v] || 0) + 1; });
@@ -214,15 +214,15 @@
                 }).join(" 和 ");
                 
                 alert(`⚠️ 系统通知：出现平票！\n\n【${tiedNames}】均获得最高票 ${maxVotes} 票。\n\n请查看左侧控制台平票提示，并点击【开启平票加赛(PK)】进行加赛！`);
-                
                 appData.tieCandidates = tiedKeys;
             } else {
-                appData.tieCandidates = []; // 没有平票则清空
+                appData.tieCandidates = [];
             }
             initConfigForm(); 
         }
         
-        if (!confirm(`确定要将系统状态切换为: ${newPhase} 吗？`)) return;
+        let confirmMsg = newPhase === 'waiting' ? '确定要结束当前投票，进入等待界面吗？' : `确定要将系统状态切换为: ${newPhase} 吗？`;
+        if (!confirm(confirmMsg)) return;
         
         isSaving = true;
         appData.phase = newPhase;
@@ -241,10 +241,13 @@
         isSaving = true;
         if (!appData.history) appData.history = [];
         
+        // 保存时对当前的配置信息建立快照，这样以后改了辩手/辩题名字，旧记录仍然准确
         const newRecord = {
             id: Date.now(),
             title: titleInput,
             time: new Date().toLocaleString(),
+            positions: JSON.parse(JSON.stringify(appData.positions || [])),
+            topics: JSON.parse(JSON.stringify(appData.topics || [])),
             debateVotes: JSON.parse(JSON.stringify(appData.debateVotes || {})),
             pkVotes: JSON.parse(JSON.stringify(appData.pkVotes || {})),
             topicVotes: JSON.parse(JSON.stringify(appData.topicVotes || {})),
@@ -255,7 +258,7 @@
 
         const res = await requestWithFallback('PUT', appData);
         if (res.success) {
-            alert("✅ 成功保存至历史记录！");
+            alert("✅ 成功完整保存至历史档案！");
             document.getElementById("historyTitle").value = "";
             renderHistory();
         } else {
@@ -265,7 +268,7 @@
     }
 
     async function deleteHistory(id) {
-        if (!confirm("⚠️ 确定要删除这条历史记录吗？不可恢复！")) return;
+        if (!confirm("⚠️ 确定要永久删除这条历史记录吗？不可恢复！")) return;
         isSaving = true;
         appData.history = appData.history.filter(h => h.id !== id);
         const res = await requestWithFallback('PUT', appData);
@@ -282,17 +285,103 @@
         
         let html = "";
         appData.history.forEach(h => {
-            const debateCount = Object.keys(h.debateVotes || {}).length;
-            const winnerCount = Object.keys(h.winnerVotes || {}).length;
+            const posSnapshot = h.positions || appData.positions || [];
+            const topicSnapshot = h.topics || appData.topics || [];
+            
+            let detailsHtml = "";
+
+            // 1. 最佳辩手 (0票不显示)
+            const dVotes = h.debateVotes || {};
+            if (Object.keys(dVotes).length > 0) {
+                detailsHtml += `<div style="margin-top:0.8rem; padding-bottom:0.3rem; border-bottom:1px dashed #cbd5e1; font-weight:bold; color:#2563eb; font-size:0.95rem;">🏆 最佳辩手</div>`;
+                posSnapshot.forEach(pos => {
+                    let voters = Object.entries(dVotes).filter(([voter, v]) => v === pos.key).map(e => e[0]);
+                    if (voters.length > 0) {
+                        detailsHtml += `<div style="font-size:0.85rem; margin-top:0.4rem; color:#0f172a;">
+                            <span style="display:inline-block; width:130px;">${pos.label} ${pos.name?`(${pos.name})`:''}</span> 
+                            <span style="font-weight:bold; color:#2563eb; width:40px; display:inline-block;">${voters.length} 票</span> 
+                            <span style="color:#64748b;">(投票人: ${voters.join(', ')})</span>
+                        </div>`;
+                    }
+                });
+            }
+
+            // 2. 平票加赛 (PK) (0票不显示)
+            const pVotes = h.pkVotes || {};
+            if (Object.keys(pVotes).length > 0) {
+                detailsHtml += `<div style="margin-top:1rem; padding-bottom:0.3rem; border-bottom:1px dashed #cbd5e1; font-weight:bold; color:#d97706; font-size:0.95rem;">⚔️ 平票加赛 (PK)</div>`;
+                posSnapshot.forEach(pos => {
+                    let voters = Object.entries(pVotes).filter(([voter, v]) => v === pos.key).map(e => e[0]);
+                    if (voters.length > 0) {
+                        detailsHtml += `<div style="font-size:0.85rem; margin-top:0.4rem; color:#0f172a;">
+                            <span style="display:inline-block; width:130px;">${pos.label} ${pos.name?`(${pos.name})`:''}</span> 
+                            <span style="font-weight:bold; color:#d97706; width:40px; display:inline-block;">${voters.length} 票</span> 
+                            <span style="color:#64748b;">(投票人: ${voters.join(', ')})</span>
+                        </div>`;
+                    }
+                });
+            }
+
+            // 3. 胜负方 (0票不显示)
+            const wVotes = h.winnerVotes || {};
+            if (Object.keys(wVotes).length > 0) {
+                detailsHtml += `<div style="margin-top:1rem; padding-bottom:0.3rem; border-bottom:1px dashed #cbd5e1; font-weight:bold; color:#166534; font-size:0.95rem;">🏅 胜负方</div>`;
+                let proVoters = Object.entries(wVotes).filter(([voter, v]) => v === 'pro').map(e => e[0]);
+                let conVoters = Object.entries(wVotes).filter(([voter, v]) => v === 'con').map(e => e[0]);
+                
+                if (proVoters.length > 0) {
+                    detailsHtml += `<div style="font-size:0.85rem; margin-top:0.4rem; color:#0f172a;">
+                        <span style="display:inline-block; width:130px;">正方 胜</span> 
+                        <span style="font-weight:bold; color:#166534; width:40px; display:inline-block;">${proVoters.length} 票</span> 
+                        <span style="color:#64748b;">(投票人: ${proVoters.join(', ')})</span>
+                    </div>`;
+                }
+                if (conVoters.length > 0) {
+                    detailsHtml += `<div style="font-size:0.85rem; margin-top:0.4rem; color:#0f172a;">
+                        <span style="display:inline-block; width:130px;">反方 胜</span> 
+                        <span style="font-weight:bold; color:#166534; width:40px; display:inline-block;">${conVoters.length} 票</span> 
+                        <span style="color:#64748b;">(投票人: ${conVoters.join(', ')})</span>
+                    </div>`;
+                }
+            }
+
+            // 4. 辩题表决 (强调：0票也要显示详细情况)
+            if (topicSnapshot.length > 0) {
+                const tVotes = h.topicVotes || {};
+                detailsHtml += `<div style="margin-top:1rem; padding-bottom:0.3rem; border-bottom:1px dashed #cbd5e1; font-weight:bold; color:#475569; font-size:0.95rem;">📋 辩题表决</div>`;
+                
+                topicSnapshot.forEach(t => {
+                    if (!t.title) return;
+                    const votesForTopic = tVotes[t.id] || {};
+                    let agree = [], disagree = [], abstain = [];
+                    Object.entries(votesForTopic).forEach(([voter, val]) => {
+                        if (val === 'agree') agree.push(voter);
+                        else if (val === 'disagree') disagree.push(voter);
+                        else if (val === 'abstain') abstain.push(voter);
+                    });
+                    
+                    detailsHtml += `<div style="font-size:0.85rem; margin-top:0.6rem; padding-left:0.6rem; border-left:3px solid #94a3b8; background:#f8fafc; padding-top:0.3rem; padding-bottom:0.3rem;">
+                        <div style="font-weight:bold; margin-bottom:0.3rem; color:#0f172a;">${t.title}</div>
+                        <div style="margin-bottom:0.2rem;">赞成: <b>${agree.length} 票</b> ${agree.length > 0 ? `<span style="color:#64748b;">(投票人: ${agree.join(', ')})</span>` : ''}</div>
+                        <div style="margin-bottom:0.2rem;">反对: <b>${disagree.length} 票</b> ${disagree.length > 0 ? `<span style="color:#64748b;">(投票人: ${disagree.join(', ')})</span>` : ''}</div>
+                        <div>弃权: <b>${abstain.length} 票</b> ${abstain.length > 0 ? `<span style="color:#64748b;">(投票人: ${abstain.join(', ')})</span>` : ''}</div>
+                    </div>`;
+                });
+            }
+
+            if(!detailsHtml) detailsHtml = `<div style="font-size:0.85rem; color:#64748b; padding-top:0.5rem;">暂无任何有效投票数据</div>`;
+
             html += `
             <div class="history-item">
-                <div style="font-weight: bold; margin-bottom: 0.3rem; color: #0f172a;">📝 ${h.title}</div>
-                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem;">🕒 ${h.time}</div>
-                <div style="font-size: 0.85rem; color: #475569; margin-bottom: 0.8rem;">
-                    最佳辩手共收 ${debateCount} 票 | 胜负共收 ${winnerCount} 票
-                </div>
-                <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight: bold; color: #0f172a; font-size:1.05rem;">📝 ${h.title}</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">🕒 ${h.time}</div>
+                    </div>
                     <button class="btn-danger btn-small" onclick="deleteHistory(${h.id})">删除</button>
+                </div>
+                <div style="margin-top: 0.8rem; background: #fff; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);">
+                    ${detailsHtml}
                 </div>
             </div>`;
         });
@@ -300,10 +389,10 @@
     }
 
     async function resetAllVotes() {
-        if (!confirm("⚠️ 确定要清空当前正在进行的【所有投票数据】吗？\n(注意：这不会删除右侧已保存的历史记录)")) return;
+        if (!confirm("⚠️ 确定要清空当前正在进行的【所有投票数据】吗？\n(注意：这不会删除右侧已保存的历史档案)")) return;
         isSaving = true;
         appData.debateVotes = {}; appData.pkVotes = {}; appData.topicVotes = {}; appData.winnerVotes = {};
-        appData.tieCandidates = []; // 重置时也清空平票名单
+        appData.tieCandidates = []; 
         const res = await requestWithFallback('PUT', appData);
         if (res.success) { alert("✅ 票数已清空！"); initConfigForm(); updateStatusBadge(); renderResults(); }
         isSaving = false;
@@ -314,7 +403,6 @@
         if (appData.phase === "waiting") { badge.className = "status-badge status-waiting"; badge.innerText = "⏸️ 投票已暂停 / 等待中"; }
         else { badge.className = "status-badge status-active"; badge.innerText = `▶️ 正在进行: ${appData.phase} 投票`; }
 
-        // 显示或隐藏平票横幅
         const tieBanner = document.getElementById("tieAlertBanner");
         if (appData.tieCandidates && appData.tieCandidates.length > 1) {
             const tiedNames = appData.tieCandidates.map(k => {
@@ -436,7 +524,7 @@
             if (res.success) { 
                 alert("✅ 配置保存成功！"); 
                 initConfigForm(); 
-                updateStatusBadge(); // 重新检查是否要显示平票横幅
+                updateStatusBadge();
                 renderResults(); 
             }
         } finally { isSaving = false; btn.innerText = "💾 保存所有配置"; }
