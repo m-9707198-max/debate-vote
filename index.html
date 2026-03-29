@@ -8,15 +8,21 @@
         body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 1rem; }
         .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); min-height: 60vh; }
         h2 { text-align: center; margin-bottom: 1.5rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
+        
         .form-group { margin-bottom: 1.2rem; }
-        label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
-        input[type="text"] { width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-sizing: border-box; font-size: 1rem; }
+        /* 强化了提示的颜色和粗细 */
+        label { display: block; font-weight: bold; margin-bottom: 0.5rem; color: #dc2626; font-size: 1.05rem; }
+        input[type="text"] { width: 100%; padding: 0.8rem; border: 2px solid #cbd5e1; border-radius: 0.5rem; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s; }
+        input[type="text"]:focus { border-color: #3b82f6; outline: none; }
+        
         button { width: 100%; padding: 0.8rem; border: none; border-radius: 0.5rem; background: #3b82f6; color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { background: #2563eb; }
         button:disabled { background: #94a3b8; cursor: not-allowed; }
+        
         .radio-option { display: block; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; margin-bottom: 0.8rem; cursor: pointer; transition: 0.2s; }
         .radio-option:hover { background: #f1f5f9; }
         input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
+        
         .waiting-msg { text-align: center; color: #d97706; font-size: 1.2rem; font-weight: bold; padding: 3rem 0; }
         .hidden { display: none; }
     </style>
@@ -28,15 +34,15 @@
     
     <div id="loginSection">
         <div class="form-group">
-            <label>请输入您的姓名进入系统：</label>
+            <label>❗️ 请先输入您的姓名，才可以查看并参与投票：</label>
             <input type="text" id="voterName" placeholder="例如：张三">
         </div>
-        <button onclick="login()">进入投票</button>
-        <p id="loginError" style="color: red; text-align: center; margin-top: 1rem; display: none;"></p>
+        <button onclick="login()">验证并进入</button>
+        <p id="loginError" style="color: red; text-align: center; margin-top: 1rem; display: none; font-weight: bold;"></p>
     </div>
 
     <div id="votingSection" class="hidden">
-        <p style="text-align: right; font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">当前用户: <strong id="displayUserName"></strong></p>
+        <p style="text-align: right; font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">当前投票人: <strong id="displayUserName" style="color:#0f172a; font-size:1rem;"></strong></p>
         <div id="dynamicContent">
             <div class="waiting-msg">⏳ 正在同步赛事状态...</div>
         </div>
@@ -44,13 +50,14 @@
 </div>
 
 <script>
-    // 保持你原有的 API 配置
+    // 你的原版 API
     const API_CONFIGS = [
         { apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC", binId: "69c6e9f0aa77b81da9286fee" },
         { apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6", binId: "69c6fdadc3097a1dd569be7c" }
     ];
 
-    let currentUser = localStorage.getItem('voterName') || "";
+    // 去掉了缓存自动登录，确保每次打开都必须填名字
+    let currentUser = ""; 
     let appData = {};
     let syncTimer = null;
 
@@ -71,28 +78,35 @@
 
     async function login() {
         const nameInput = document.getElementById("voterName").value.trim();
-        if (!nameInput) return alert("请输入姓名");
+        const errObj = document.getElementById("loginError");
+        errObj.style.display = "none";
+
+        if (!nameInput) {
+            errObj.innerText = "❗️ 姓名不能为空，请输入姓名！";
+            errObj.style.display = "block";
+            return;
+        }
         
         const btn = document.querySelector("#loginSection button");
         btn.innerText = "连接中..."; btn.disabled = true;
 
         const res = await requestWithFallback('GET');
-        btn.innerText = "进入投票"; btn.disabled = false;
+        btn.innerText = "验证并进入"; btn.disabled = false;
 
         if (res.success && res.data) {
             appData = res.data;
             const allowed = appData.allowedVoters || [];
             if (allowed.length > 0 && !allowed.includes(nameInput)) {
-                const err = document.getElementById("loginError");
-                err.innerText = "❌ 抱歉，您的姓名不在本次投票白名单中。";
-                err.style.display = "block";
+                errObj.innerText = "❗️ 抱歉，您的姓名不在本次投票白名单中。";
+                errObj.style.display = "block";
                 return;
             }
+            // 验证通过，正式进入
             currentUser = nameInput;
-            localStorage.setItem('voterName', currentUser);
             showVotingSection();
         } else {
-            alert("网络连接失败，请重试");
+            errObj.innerText = "❗️ 网络连接失败，请重试";
+            errObj.style.display = "block";
         }
     }
 
@@ -109,7 +123,7 @@
         const phase = appData.phase || "waiting";
 
         if (phase === "waiting") {
-            content.innerHTML = `<div class="waiting-msg">⏳ 当前未开启投票<br><span style="font-size:0.9rem; color:#64748b;">请等待管理员操作...</span></div>`;
+            content.innerHTML = `<div class="waiting-msg">⏳ 当前未开启投票<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待管理员操作...</span></div>`;
             return;
         }
 
@@ -118,7 +132,7 @@
         // 最佳辩手投票
         if (phase === "debateVoting") {
             if ((appData.debateVotes || {})[currentUser]) {
-                content.innerHTML = `<div class="waiting-msg">✅ 您已成功投票给最佳辩手<br><span style="font-size:0.9rem; color:#64748b;">请等待该轮投票结束。</span></div>`; return;
+                content.innerHTML = `<div class="waiting-msg">✅ 您已成功投票给最佳辩手<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待该轮投票结束。</span></div>`; return;
             }
             html += `<h3 style="color:#2563eb; margin-bottom:1rem;">🏆 评选最佳辩手</h3>`;
             appData.positions.forEach(pos => {
@@ -129,7 +143,7 @@
         // 平票加赛投票
         else if (phase === "pkVoting") {
             if ((appData.pkVotes || {})[currentUser]) {
-                content.innerHTML = `<div class="waiting-msg">✅ 您的PK票已投出<br><span style="font-size:0.9rem; color:#64748b;">请等待该轮投票结束。</span></div>`; return;
+                content.innerHTML = `<div class="waiting-msg">✅ 您的PK票已投出<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待该轮投票结束。</span></div>`; return;
             }
             html += `<h3 style="color:#d97706; margin-bottom:1rem;">⚔️ 平票加赛 (PK)</h3>`;
             (appData.tieCandidates || []).forEach(candKey => {
@@ -176,7 +190,7 @@
     }
 
     async function submitVote(voteType, value) {
-        if (!value) return alert("请先选择一项！");
+        if (!value) return alert("❗️ 请先选择一项才能提交！");
         const btn = document.querySelector("#dynamicContent button");
         btn.innerText = "提交中..."; btn.disabled = true;
 
@@ -188,7 +202,7 @@
             
             const putRes = await requestWithFallback('PUT', appData);
             if (putRes.success) renderVotingUI();
-            else { alert("提交失败"); btn.innerText = "确认投票"; btn.disabled = false; }
+            else { alert("❗️ 提交失败，请重试"); btn.innerText = "确认投票"; btn.disabled = false; }
         }
     }
 
@@ -212,7 +226,7 @@
             
             const putRes = await requestWithFallback('PUT', appData);
             if (putRes.success) renderVotingUI();
-            else { alert("提交失败"); btn.innerText = "确认表决"; btn.disabled = false; }
+            else { alert("❗️ 提交失败，请重试"); btn.innerText = "确认表决"; btn.disabled = false; }
         }
     }
 
@@ -232,7 +246,8 @@
     }
 
     window.onload = () => {
-        if (currentUser) { showVotingSection(); poll(); }
+        // 去掉了原先跳过登录的逻辑，现在每个人一进来都只看到输入名字的框框
+        document.getElementById("loginSection").classList.remove("hidden");
     };
 </script>
 </body>
