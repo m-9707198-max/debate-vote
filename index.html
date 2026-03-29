@@ -3,166 +3,604 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>辩论赛实时投票系统</title>
+    <title>辩论赛投票系统 - 投票人界面</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f5f7fb; color: #1e293b; padding: 1rem; }
-        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2 { font-size: 1.5rem; margin-bottom: 1rem; text-align: center; }
-        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            padding: 1rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
         .form-group { margin-bottom: 1rem; }
-        input { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 1rem; }
-        button { background: #3b82f6; border: none; color: white; padding: 0.6rem 1.5rem; border-radius: 2rem; cursor: pointer; font-weight: bold; width: 100%; font-size: 1.1rem; }
-        .candidate-list, .topics-area { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
-        .candidate-item, .topic-item { background: #f8fafc; padding: 0.8rem; border-radius: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
-        .vote-option { display: flex; gap: 0.8rem; }
-        .status-msg { background: #f1f5f9; padding: 0.6rem; border-radius: 0.5rem; text-align: center; margin-top: 0.8rem; color: #10b981; font-weight: bold; }
-        .notice-text { color: #ef4444; font-weight: bold; margin-top: 1rem; font-size: 1.1rem; }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #475569;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+        button {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .candidate-list, .topics-area, .winner-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        .candidate-item, .topic-item, .winner-item {
+            background: #f8fafc;
+            padding: 0.8rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+        .vote-option { display: flex; gap: 1rem; }
+        .status-msg {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .success-msg {
+            background: #e6f7e6;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        .error-msg {
+            background: #fee2e2;
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+        }
+        .fixed-red-hint {
+            color: #dc2626;
+            background: #fee2e2;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .notice-text {
+            color: #ef4444;
+            font-weight: bold;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        @media (max-width: 700px) {
+            .candidate-item, .topic-item, .winner-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .vote-option { margin-top: 0.5rem; }
+        }
     </style>
 </head>
 <body>
-
 <div class="container" id="voterContent">
     <div class="card" style="text-align:center;">
-        <h2>🔄 数据同步中...</h2>
-        <p style="color: #64748b;">正在连接服务器，请稍候</p>
+        <h2>⏳ 加载中...</h2>
+        <p>正在同步投票系统，请稍候</p>
     </div>
 </div>
 
 <script>
+    // ========== API 配置（双备用，赛后建议重置） ==========
     const API_CONFIGS = [
         { apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC", binId: "69c6e9f0aa77b81da9286fee" },
         { apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6", binId: "69c6fdadc3097a1dd569be7c" }
     ];
 
-    let appData = { phase: "waiting", positions: [], debateVotes: {}, pkVotes: {}, topics: [], topicVotes: {}, tieCandidates: [], allowedVoters: [] };
+    let appData = {
+        phase: "waiting",
+        debateTopic: "",
+        positions: [],
+        debateVotes: {},
+        pkVotes: {},
+        topics: [],
+        topicVotes: {},
+        tieCandidates: [],
+        pkModeActive: false,
+        allowedVoters: [],
+        winnerTopic: "本次辩论的胜方",
+        winnerVotes: {}
+    };
 
+    let confirmedName = "";
+    let tempName = "";
+    let isSubmitting = false;
+    let pendingSelections = { debate: null, pk: null, topics: {}, winner: null };
+
+    // ========== 通用请求函数 ==========
     async function requestWithFallback(method, data = null) {
-        for (let i = 0; i < API_CONFIGS.length; i++) {
-            const cfg = API_CONFIGS[i];
-            const url = `https://api.jsonbin.io/v3/b/${cfg.binId}/latest`;
+        for (let cfg of API_CONFIGS) {
             try {
                 if (method === 'GET') {
-                    const resp = await fetch(url, { headers: { 'X-Master-Key': cfg.apiKey } });
+                    const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
+                        headers: { 'X-Master-Key': cfg.apiKey }
+                    });
                     if (resp.ok) {
                         const result = await resp.json();
-                        return { success: true, data: result.record, configIndex: i };
+                        return { success: true, data: result.record };
                     }
-                } else if (method === 'PUT') {
+                } else {
                     const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey },
                         body: JSON.stringify(data)
                     });
-                    if (resp.ok) return { success: true, configIndex: i };
+                    if (resp.ok) return { success: true };
                 }
-            } catch (e) { console.warn(`配置 ${i+1} 请求失败:`, e); }
+            } catch(e) {
+                console.warn("API Request Failed, trying fallback...", e);
+            }
         }
         return { success: false };
     }
 
     async function loadData() {
-        const result = await requestWithFallback('GET');
-        if (result.success) return result.data;
-        return null;
+        const r = await requestWithFallback('GET');
+        return r.success ? r.data : null;
     }
 
     async function pushToRemote() {
-        const result = await requestWithFallback('PUT', appData);
-        return result.success;
+        const r = await requestWithFallback('PUT', appData);
+        return r.success;
     }
 
-    function checkVoterEligibility(name, voteType) {
+    function getActiveDebaters() { return (appData.positions || []).filter(p => p.name && p.name.trim() !== ""); }
+    function getActiveTopics() { return (appData.topics || []).filter(t => t.title && t.title.trim() !== ""); }
+    
+    function hasUserVoted(name, type) {
         if (!name) return false;
-        const cleanName = name.trim();
-        const allowedList = (appData.allowedVoters || []).map(n => n.trim());
-        if (allowedList.length > 0 && !allowedList.includes(cleanName)) return false;
-        if (voteType === 'debate' && appData.debateVotes[cleanName]) return false;
-        if (voteType === 'pk' && appData.pkVotes[cleanName]) return false;
-        if (voteType === 'topic') {
-            for (let t of appData.topics) {
-                if (appData.topicVotes && appData.topicVotes[t.id] && appData.topicVotes[t.id][cleanName]) return false;
+        const n = name.trim();
+        if (type === 'debate') return !!appData.debateVotes[n];
+        if (type === 'pk') return !!appData.pkVotes[n];
+        if (type === 'topic') {
+            for (let t of getActiveTopics()) {
+                if (appData.topicVotes[t.id] && appData.topicVotes[t.id][n]) return true;
             }
+            return false;
         }
-        return true;
+        if (type === 'winner') return !!appData.winnerVotes[n];
+        return false;
     }
 
-    function renderVoterUI() {
+    function getUserVoteInfo(name, type) {
+        const n = name.trim();
+        if (type === 'debate') {
+            const k = appData.debateVotes[n];
+            const d = getActiveDebaters().find(p => p.key === k);
+            return d ? `${d.label} · ${d.name}` : "未知";
+        }
+        if (type === 'pk') {
+            const k = appData.pkVotes[n];
+            const d = getActiveDebaters().find(p => p.key === k);
+            return d ? `${d.label} · ${d.name}` : "未知";
+        }
+        if (type === 'winner') {
+            return appData.winnerVotes[n] === 'pro' ? '正方' : '反方';
+        }
+        return "";
+    }
+
+    function isInWhitelist(name) {
+        if (!name) return false;
+        const allowed = (appData.allowedVoters || []).map(s => s.trim());
+        if (allowed.length === 0) return true;
+        return allowed.includes(name.trim());
+    }
+
+    function captureSelections() {
+        const phase = appData.phase;
+        if (phase === "debateVoting") {
+            const sel = document.querySelector('input[name="debateVote"]:checked');
+            pendingSelections.debate = sel ? sel.value : null;
+        } else if (phase === "pkVoting") {
+            const sel = document.querySelector('input[name="pkVote"]:checked');
+            pendingSelections.pk = sel ? sel.value : null;
+        } else if (phase === "topicVoting") {
+            pendingSelections.topics = {};
+            for (let t of getActiveTopics()) {
+                const sel = document.querySelector(`input[name="topic_${t.id}"]:checked`);
+                pendingSelections.topics[t.id] = sel ? sel.value : null;
+            }
+        } else if (phase === "winnerVoting") {
+            const sel = document.querySelector('input[name="winnerVote"]:checked');
+            pendingSelections.winner = sel ? sel.value : null;
+        }
+    }
+
+    function restoreSelections() {
+        const phase = appData.phase;
+        if (phase === "debateVoting" && pendingSelections.debate) {
+            const radio = document.querySelector(`input[name="debateVote"][value="${pendingSelections.debate}"]`);
+            if (radio) radio.checked = true;
+        } else if (phase === "pkVoting" && pendingSelections.pk) {
+            const radio = document.querySelector(`input[name="pkVote"][value="${pendingSelections.pk}"]`);
+            if (radio) radio.checked = true;
+        } else if (phase === "topicVoting") {
+            for (let t of getActiveTopics()) {
+                const val = pendingSelections.topics[t.id];
+                if (val) {
+                    const radio = document.querySelector(`input[name="topic_${t.id}"][value="${val}"]`);
+                    if (radio) radio.checked = true;
+                }
+            }
+        } else if (phase === "winnerVoting" && pendingSelections.winner) {
+            const radio = document.querySelector(`input[name="winnerVote"][value="${pendingSelections.winner}"]`);
+            if (radio) radio.checked = true;
+        }
+    }
+
+    function renderVotedResult() {
         const container = document.getElementById("voterContent");
-        if (container.dataset.phase === appData.phase) return;
-        container.dataset.phase = appData.phase;
+        const phase = appData.phase;
+        let title = "", content = "";
+        if (phase === "debateVoting") {
+            title = "🏆 最佳辩手投票";
+            content = `✅ 您已参与投票<br>您投给了：${getUserVoteInfo(confirmedName, 'debate')}<br>结果将在会议中公布`;
+        } else if (phase === "pkVoting") {
+            title = "⚔️ 平票PK投票";
+            content = `✅ 您已参与投票<br>您投给了：${getUserVoteInfo(confirmedName, 'pk')}<br>结果将在会议中公布`;
+        } else if (phase === "topicVoting") {
+            title = "📋 辩题投票";
+            content = `✅ 您已参与投票<br>结果将在会议中公布`;
+        } else if (phase === "winnerVoting") {
+            title = "🏅 胜方投票";
+            content = `✅ 您已参与投票<br>您投给了：${getUserVoteInfo(confirmedName, 'winner')}<br>结果将在会议中公布`;
+        }
+        container.innerHTML = `<div class="card" style="text-align:center;"><h2>${title}</h2><div class="status-msg success-msg">${content}</div></div>`;
+    }
 
-        if (appData.phase === "debateVoting") {
-            const debaters = appData.positions.filter(p => p.name && p.name.trim() !== "");
-            container.innerHTML = `<h2>🏆 最佳辩手投票</h2><div class="card"><div class="form-group"><label>您的姓名 (需在名单内)</label><input id="voterName" placeholder="输入姓名"></div><div class="candidate-list" id="candList"></div><button id="voteBtn">提交投票</button><div id="msg" class="status-msg" style="display:none;"></div></div>`;
-            document.getElementById("candList").innerHTML = debaters.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="debateVote" value="${d.key}"> 选择</label></div>`).join('');
-            document.getElementById("voteBtn").onclick = async () => {
-                const name = document.getElementById("voterName").value;
-                const selected = document.querySelector('input[name="debateVote"]:checked');
-                if (!name.trim()) return alert("请输入姓名");
-                if (!selected) return alert("请选择辩手");
-                if (!checkVoterEligibility(name, 'debate')) return alert("投票失败：您的名字不在名单中，或您已经投过票了！");
-                appData.debateVotes[name.trim()] = selected.value; 
-                await pushToRemote();
-                alert("投票成功！"); 
-                document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block";
-            };
-        } else if (appData.phase === "pkVoting") {
-            const pkCands = (appData.tieCandidates || []).map(k => appData.positions.find(p => p.key === k)).filter(Boolean);
-            container.innerHTML = `<h2>⚔️ 平票加赛 · 决胜投票</h2><div class="card"><div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="输入姓名"></div><div class="candidate-list" id="pkList"></div><button id="pkVoteBtn">提交PK投票</button><div id="msg" class="status-msg" style="display:none;"></div></div>`;
-            document.getElementById("pkList").innerHTML = pkCands.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="pkVote" value="${d.key}"> 选择</label></div>`).join('');
-            document.getElementById("pkVoteBtn").onclick = async () => {
-                const name = document.getElementById("voterName").value;
-                const selected = document.querySelector('input[name="pkVote"]:checked');
-                if (!name.trim()) return alert("请输入姓名");
-                if (!selected) return alert("请选择辩手");
-                if (!checkVoterEligibility(name, 'pk')) return alert("投票失败：您的名字不在名单中，或已经投过票");
-                appData.pkVotes[name.trim()] = selected.value; 
-                await pushToRemote();
-                alert("PK投票成功！"); 
-                document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block";
-            };
-        } else if (appData.phase === "topicVoting") {
-            container.innerHTML = `<h2>📋 辩题投票</h2><div class="card"><div class="form-group"><label>您的姓名</label><input id="voterName" placeholder="输入姓名"></div><div class="topics-area" id="topicsArea"></div><button id="topicVoteBtn">提交投票</button><div id="msg" class="status-msg" style="display:none;"></div></div>`;
-            document.getElementById("topicsArea").innerHTML = appData.topics.map(t => `<div class="topic-item"><div style="flex:1; margin-right:10px;"><strong>${t.title}</strong></div><div class="vote-option"><label><input type="radio" name="topic_${t.id}" value="agree"> 赞成</label><label><input type="radio" name="topic_${t.id}" value="disagree"> 反对</label><label><input type="radio" name="topic_${t.id}" value="abstain"> 弃权</label></div></div>`).join('');
-            document.getElementById("topicVoteBtn").onclick = async () => {
-                const name = document.getElementById("voterName").value;
-                if (!name.trim()) return alert("请输入姓名");
-                if (!checkVoterEligibility(name, 'topic')) return alert("投票失败：您的名字不在名单中，或已经投过票");
-                let allSelected = true;
-                if (!appData.topicVotes) appData.topicVotes = {}; // 防错处理
+    function buildVotingUI() {
+        const container = document.getElementById("voterContent");
+        const phase = appData.phase;
+        let title = "";
+        if (phase === "debateVoting") title = "🏆 最佳辩手投票";
+        else if (phase === "pkVoting") title = "⚔️ 平票PK投票";
+        else if (phase === "topicVoting") title = "📋 辩题投票";
+        else if (phase === "winnerVoting") title = "🏅 胜方投票";
+
+        container.innerHTML = `
+            <div class="card">
+                <h2>${title}</h2>
+                <div class="name-section" style="background:#fef9e3; border-left:4px solid #f59e0b; padding:1rem; border-radius:0.5rem; margin-bottom:1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                        <div style="flex:2; min-width:150px;">
+                            <label style="margin-bottom:0.2rem;">您的姓名</label>
+                            <input type="text" id="voterNameInput" placeholder="请输入您的姓名" value="${escapeHtml(tempName)}">
+                        </div>
+                        <div style="flex:1;">
+                            <button id="confirmNameBtn" style="margin-top:1.6rem; width:100%;">确认姓名</button>
+                        </div>
+                    </div>
+                    <div id="nameHint" class="status-msg error-msg" style="margin-top:0.5rem; display:none;"></div>
+                </div>
+                <div id="voteOptionsContainer"></div>
+            </div>
+        `;
+
+        const nameInput = document.getElementById("voterNameInput");
+        const confirmBtn = document.getElementById("confirmNameBtn");
+        const nameHint = document.getElementById("nameHint");
+
+        nameInput.addEventListener("input", (e) => {
+            tempName = e.target.value.trim();
+            nameHint.style.display = "none";
+        });
+
+        confirmBtn.onclick = async () => {
+            const name = tempName;
+            if (!name) {
+                nameHint.innerText = "⚠️ 请输入姓名";
+                nameHint.style.display = "block";
+                return;
+            }
+            if (!isInWhitelist(name)) {
+                nameHint.innerText = "❌ 您的姓名不在投票白名单中，无法参与投票。";
+                nameHint.style.display = "block";
+                return;
+            }
+            
+            let voteType = phase.replace("Voting", "").toLowerCase(); // debate, pk, topic, winner
+            if (hasUserVoted(name, voteType)) {
+                confirmedName = name;
+                renderVotedResult();
+                return;
+            }
+            confirmedName = name;
+            updateOptionsArea();
+        };
+
+        updateOptionsArea();
+    }
+
+    function updateOptionsArea() {
+        const optionsContainer = document.getElementById("voteOptionsContainer");
+        if (!optionsContainer) return;
+        const phase = appData.phase;
+
+        if (!confirmedName) {
+            optionsContainer.innerHTML = `<div class="fixed-red-hint">⚠️ 请输入姓名并点击【确认姓名】按钮后，方可看到投票选项</div>`;
+            return;
+        }
+
+        let voteType = phase.replace("Voting", "").toLowerCase();
+        if (hasUserVoted(confirmedName, voteType)) {
+            renderVotedResult();
+            return;
+        }
+
+        if (phase === "debateVoting") {
+            const debaters = getActiveDebaters();
+            if (debaters.length === 0) {
+                optionsContainer.innerHTML = `<div class="status-msg error-msg">暂无有效辩手，请联系管理员配置。</div>`;
+                return;
+            }
+            optionsContainer.innerHTML = `
+                <div class="candidate-list">
+                    ${debaters.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="debateVote" value="${d.key}"> 选择</label></div>`).join('')}
+                </div>
+                <button id="submitDebateVote">提交投票</button>
+            `;
+            restoreSelections();
+            document.querySelectorAll('input[name="debateVote"]').forEach(radio => {
+                radio.addEventListener('change', () => { pendingSelections.debate = radio.value; });
+            });
+            document.getElementById("submitDebateVote").onclick = async (e) => handleVoteSubmit(e.target, 'debateVote', appData.debateVotes, "请选择一位辩手");
+        } 
+        else if (phase === "pkVoting") {
+            const pkCands = (appData.tieCandidates || []).map(k => appData.positions.find(p => p.key === k)).filter(p => p);
+            if (pkCands.length !== 2) {
+                optionsContainer.innerHTML = `<div class="status-msg info-msg">等待管理员配置加赛辩手...</div>`;
+                return;
+            }
+            optionsContainer.innerHTML = `
+                <div class="candidate-list">
+                    ${pkCands.map(d => `<div class="candidate-item"><span>${d.label} · ${d.name}</span><label><input type="radio" name="pkVote" value="${d.key}"> 选择</label></div>`).join('')}
+                </div>
+                <button id="submitPKVote">提交PK投票</button>
+            `;
+            restoreSelections();
+            document.querySelectorAll('input[name="pkVote"]').forEach(radio => {
+                radio.addEventListener('change', () => { pendingSelections.pk = radio.value; });
+            });
+            document.getElementById("submitPKVote").onclick = async (e) => handleVoteSubmit(e.target, 'pkVote', appData.pkVotes, "请选择一位辩手");
+        }
+        else if (phase === "topicVoting") {
+            const topics = getActiveTopics();
+            if (topics.length === 0) {
+                optionsContainer.innerHTML = `<div class="status-msg error-msg">暂无有效辩题，请联系管理员配置。</div>`;
+                return;
+            }
+            optionsContainer.innerHTML = `
+                <div class="topics-area">
+                    ${topics.map(t => `
+                        <div class="topic-item">
+                            <div><strong>${escapeHtml(t.title)}</strong></div>
+                            <div class="vote-option">
+                                <label><input type="radio" name="topic_${t.id}" value="agree"> 赞成</label>
+                                <label><input type="radio" name="topic_${t.id}" value="disagree"> 反对</label>
+                                <label><input type="radio" name="topic_${t.id}" value="abstain"> 弃权</label>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <button id="submitTopicsVote">提交全部辩题投票</button>
+            `;
+            restoreSelections();
+            for (let t of topics) {
+                document.querySelectorAll(`input[name="topic_${t.id}"]`).forEach(radio => {
+                    radio.addEventListener('change', () => { pendingSelections.topics[t.id] = radio.value; });
+                });
+            }
+            document.getElementById("submitTopicsVote").onclick = async (e) => {
+                if (isSubmitting) return;
+                let missing = topics.filter(t => !document.querySelector(`input[name="topic_${t.id}"]:checked`));
+                if (missing.length) return alert(`请完成所有辩题的选择：\n${missing.map(m=>m.title).join('\n')}`);
                 
-                for (let t of appData.topics) {
-                    const selected = document.querySelector(`input[name="topic_${t.id}"]:checked`);
-                    if (!selected) { alert(`请为辩题「${t.title}」选择选项`); allSelected = false; break; }
-                    if (!appData.topicVotes[t.id]) appData.topicVotes[t.id] = {}; // 关键防错修复
-                    appData.topicVotes[t.id][name.trim()] = selected.value;
-                }
-                if (allSelected) { 
-                    await pushToRemote(); 
-                    alert("所有辩题投票已提交！"); 
-                    document.getElementById("msg").innerText = "✅ 投票已提交"; document.getElementById("msg").style.display = "block"; 
+                isSubmitting = true;
+                const btn = e.target;
+                btn.disabled = true;
+                btn.textContent = "提交中...";
+                try {
+                    for (let t of topics) {
+                        const selected = document.querySelector(`input[name="topic_${t.id}"]:checked`);
+                        appData.topicVotes[t.id] = appData.topicVotes[t.id] || {};
+                        appData.topicVotes[t.id][confirmedName] = selected.value;
+                    }
+                    if (await pushToRemote()) renderVotedResult();
+                    else {
+                        alert("保存失败，请稍后重试");
+                        for (let t of topics) delete appData.topicVotes[t.id][confirmedName];
+                    }
+                } finally {
+                    isSubmitting = false;
+                    btn.disabled = false;
+                    btn.textContent = "提交全部辩题投票";
                 }
             };
-        } else {
-            // 这里就是完美解决你的痛点1：闲置时显示等待管理员
-            container.innerHTML = `<div class="card" style="text-align:center;"><h2>⏳ 请等待管理员下一步操作</h2><p style="color: #64748b;">系统已连接，等待指令...</p><div class="notice-text">📢 结果公布在会议中</div></div>`;
+        }
+        else if (phase === "winnerVoting") {
+            optionsContainer.innerHTML = `
+                <div class="winner-area">
+                    <div class="winner-item"><span>正方</span><label><input type="radio" name="winnerVote" value="pro"> 选择</label></div>
+                    <div class="winner-item"><span>反方</span><label><input type="radio" name="winnerVote" value="con"> 选择</label></div>
+                </div>
+                <button id="submitWinnerVote">提交投票</button>
+            `;
+            restoreSelections();
+            document.querySelectorAll('input[name="winnerVote"]').forEach(radio => {
+                radio.addEventListener('change', () => { pendingSelections.winner = radio.value; });
+            });
+            document.getElementById("submitWinnerVote").onclick = async (e) => handleVoteSubmit(e.target, 'winnerVote', appData.winnerVotes, "请选择正方或反方");
         }
     }
+
+    // 提取通用投票提交逻辑
+    async function handleVoteSubmit(btn, inputName, targetDataObj, alertMsg) {
+        if (isSubmitting) return;
+        const selected = document.querySelector(`input[name="${inputName}"]:checked`);
+        if (!selected) return alert(alertMsg);
+        
+        isSubmitting = true;
+        btn.disabled = true;
+        btn.textContent = "提交中...";
+        try {
+            targetDataObj[confirmedName] = selected.value;
+            if (await pushToRemote()) renderVotedResult();
+            else {
+                alert("保存失败，请稍后重试");
+                delete targetDataObj[confirmedName];
+            }
+        } finally {
+            isSubmitting = false;
+            btn.disabled = false;
+            btn.textContent = "提交投票";
+        }
+    }
+
+    function renderUI() {
+        if (appData.phase === "waiting") {
+            document.getElementById("voterContent").innerHTML = `
+                <div class="card" style="text-align:center;">
+                    <h2>⏳ 请等待管理员下一步操作</h2>
+                    <p style="color: #64748b;">系统会自动刷新...</p>
+                    <div class="notice-text">📢 结果公布在会议中</div>
+                </div>
+            `;
+            return;
+        }
+
+        let voteType = appData.phase.replace("Voting", "").toLowerCase();
+        if (confirmedName && hasUserVoted(confirmedName, voteType)) {
+            renderVotedResult();
+        } else {
+            buildVotingUI();
+        }
+    }
+
+    function escapeHtml(s) { return s ? s.replace(/[&<>]/g, function(m) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]; }) : ""; }
+
+    // ========== 核心优化：动态智能轮询 (Adaptive Polling) ==========
+    let isSyncing = false;
+    let syncTimer = null;
+    
+    // 配置轮询频率（毫秒）
+    const FAST_INTERVAL = 4000;   // 活跃投票状态：4秒刷新一次
+    const SLOW_INTERVAL = 10000;  // 等待状态或已完成投票：10秒刷新一次
 
     async function sync() {
-        const remote = await loadData();
-        if (remote) {
-            appData = { ...appData, ...remote };
-            renderVoterUI();
-        }
+        if (isSyncing) return;
+        isSyncing = true;
+        try {
+            if (document.getElementById("voteOptionsContainer")) captureSelections();
+            const remote = await loadData();
+            if (remote) {
+                const oldPhase = appData.phase;
+                appData = { ...appData, ...remote };
+                appData.topicVotes = appData.topicVotes || {};
+                appData.debateVotes = appData.debateVotes || {};
+                appData.pkVotes = appData.pkVotes || {};
+                appData.allowedVoters = appData.allowedVoters || [];
+                appData.positions = appData.positions || [];
+                appData.topics = appData.topics || [];
+                appData.winnerVotes = appData.winnerVotes || {};
+
+                if (oldPhase !== appData.phase) {
+                    confirmedName = "";
+                    tempName = "";
+                    pendingSelections = { debate: null, pk: null, topics: {}, winner: null };
+                    renderUI();
+                } else {
+                    let voteType = appData.phase.replace("Voting", "").toLowerCase();
+                    if (confirmedName && hasUserVoted(confirmedName, voteType)) {
+                        renderVotedResult();
+                    } else {
+                        renderUI();
+                        setTimeout(() => {
+                            if (document.getElementById("voteOptionsContainer")) restoreSelections();
+                        }, 50);
+                    }
+                }
+            } else if (!document.getElementById("voterContent").querySelector('h2').innerText.includes("加载中")) {
+               renderUI();
+            }
+        } catch(e) { console.error(e); }
+        finally { isSyncing = false; }
     }
-    
-    // 关键：10秒刷新一次，确保额度绝对够用
-    setInterval(() => {
-        if (!document.hidden) sync(); // 切到后台不刷新，极致省流
-    }, 10000); 
-    sync();
+
+    // 智能调度器
+    async function scheduleNextSync() {
+        await sync();
+        
+        let nextDelay = FAST_INTERVAL;
+        
+        // 如果处于等待状态，减慢拉取速度
+        if (appData.phase === "waiting") {
+            nextDelay = SLOW_INTERVAL;
+        } else {
+            // 如果用户已经投完票，减慢拉取速度
+            let voteType = appData.phase.replace("Voting", "").toLowerCase();
+            if (confirmedName && hasUserVoted(confirmedName, voteType)) {
+                nextDelay = SLOW_INTERVAL;
+            }
+        }
+        
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(scheduleNextSync, nextDelay);
+    }
+
+    // 初始化启动
+    scheduleNextSync();
+
 </script>
 </body>
 </html>
