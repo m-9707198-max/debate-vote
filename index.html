@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>辩论赛投票系统 - 投票人界面</title>
+    <title>辩论赛投票</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -511,7 +511,7 @@
         if (appData.phase === "waiting") {
             document.getElementById("voterContent").innerHTML = `
                 <div class="card" style="text-align:center;">
-                    <h2>⏳ 请等待管理员下一步操作</h2>
+                    <h2>⏳ 等待管理员操作</h2>
                     <p style="color: #64748b;">系统会自动刷新...</p>
                     <div class="notice-text">📢 结果公布在会议中</div>
                 </div>
