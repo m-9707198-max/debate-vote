@@ -22,14 +22,13 @@
         .radio-option:hover { background: #f1f5f9; }
         input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
         
-        .waiting-msg { text-align: center; color: #d97706; font-size: 1.2rem; font-weight: bold; padding: 3rem 0; }
+        .waiting-msg { text-align: center; color: #d97706; font-size: 1.2rem; font-weight: bold; padding: 1rem 0; }
         .hidden { display: none; }
         
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #e2e8f0; }
         .btn-logout { width: auto; padding: 0.4rem 0.8rem; background: #ef4444; font-size: 0.85rem; border-radius: 0.4rem; }
         .btn-logout:hover { background: #dc2626; }
         
-        /* 投完票后的结果展示卡片样式 */
         .vote-success-card { padding: 1.5rem 0; text-align: center; }
         .vote-success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
         .vote-success-title { font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: bold; }
@@ -143,7 +142,16 @@
         const phase = appData.phase || "waiting";
 
         if (phase === "waiting") {
-            content.innerHTML = `<div class="waiting-msg">⏳ 当前未开启投票<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待管理员操作...</span></div>`;
+            // 这是修改后的等待界面，加上了横线和“结果将在会议中公布”
+            content.innerHTML = `
+                <div class="waiting-msg" style="padding-top: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
+                    当前未开启投票<br>
+                    <span style="font-size:0.9rem; color:#64748b; font-weight:normal; display:inline-block; margin-top:0.5rem;">请等待管理员操作...</span>
+                    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px dashed #cbd5e1; font-size: 1.05rem; color: #64748b; font-weight: normal; letter-spacing: 1px;">
+                        📢 结果将在会议中公布
+                    </div>
+                </div>`;
             return;
         }
 
@@ -212,7 +220,6 @@
             html += `<button onclick="submitVote('winnerVotes', getRadioValue('vote'))" style="margin-top:1rem; background:#166534;">确认投票</button>`;
         }
         else if (phase === "topicVoting") {
-            // 检查是否有任何关于辩题的投票
             const myTopicVotes = [];
             (appData.topics || []).forEach(t => {
                 const voteVal = (appData.topicVotes && appData.topicVotes[t.id]) ? appData.topicVotes[t.id][currentUser] : null;
