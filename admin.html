@@ -2,571 +2,231 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>系统管理控制台 - 完整版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 辩论赛</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #1e293b; color: #333; padding: 1rem; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2 { font-size: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
-        h3 { font-size: 1.2rem; margin: 1rem 0 0.5rem; color: #1e293b; }
-        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; }
-        input, textarea { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
-        button { background: #3b82f6; border: none; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 500; }
-        button.danger { background: #ef4444; } button.success { background: #10b981; } button.warning { background: #f59e0b; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .stat-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px dashed #cbd5e1; }
-        .history-item { background: #fff; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #cbd5e1; overflow: hidden; }
-        .history-header { background: #f1f5f9; padding: 0.8rem 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .history-body { padding: 1rem; display: none; border-top: 1px solid #cbd5e1; }
-        .history-body.open { display: block; }
-        hr { margin: 1rem 0; border: none; border-top: 1px solid #e2e8f0; }
-        .preview-box { background: #eff6ff; border: 2px solid #bfdbfe; }
-        .preview-content { background: white; padding: 1rem; border-radius: 0.8rem; margin-top: 0.5rem; border: 1px solid #cbd5e1; pointer-events: none; opacity: 0.9; }
-        .preview-content h4 { text-align: center; margin-bottom: 1rem; font-size: 1.2rem; }
-        .preview-item { background: #f8fafc; padding: 0.6rem; margin-bottom: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; }
-        .positions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin: 0.5rem 0; }
-        .position-item { background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem; }
-        .position-label { font-weight: bold; font-size: 0.85rem; color: #475569; margin-bottom: 0.3rem; }
-        .position-input { width: 100%; padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.3rem; font-size: 0.9rem; }
-        .voter-detail { font-size: 0.85rem; color: #475569; background: #f1f5f9; padding: 0.3rem; border-radius: 0.3rem; margin-top: 0.3rem; }
-        .api-status { background: #fef9e3; border-left: 4px solid #f59e0b; }
-        .api-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0; }
-        .api-badge { font-family: monospace; font-size: 0.8rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 0.5rem; }
-        .api-link { color: #3b82f6; text-decoration: none; font-size: 0.85rem; }
-        .delete-btn { background: #dc2626; padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.5rem; border-radius: 0.3rem; cursor: pointer; }
-        @media (max-width: 700px) { .positions-grid { grid-template-columns: 1fr; } }
+        body { font-family: system-ui, sans-serif; background: #e2e8f0; padding: 20px; color: #1e293b; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2 { border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; margin-bottom: 20px; }
+        .section { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        textarea { height: 100px; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; display: inline-block; }
+        .btn-red { background: #ef4444; }
+        .btn-green { background: #10b981; }
+        .status-bar { background: #1e293b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+        .result-box { background: #fff; border: 1px solid #ccc; padding: 10px; margin-top: 10px; border-radius: 4px; white-space: pre-wrap;}
     </style>
 </head>
 <body>
-<div id="adminPanel" class="container">
-    <h2>⚙️ 投票系统指挥中心</h2>
 
-    <!-- API 状态监控 -->
-    <div class="card api-status">
-        <h3>📡 API 状态监控</h3>
-        <div id="apiStatusContainer"></div>
-        <div style="font-size:0.8rem; margin-top:0.5rem;">
-            💡 免费额度：每月 100 次写入（PUT），读取不限。<br>
-            🔗 <a href="https://jsonbin.io/account" target="_blank" class="api-link">点击查看剩余写入次数</a>
-        </div>
+<div class="container">
+    <h1>🛠️ 投票管理后台</h1>
+    
+    <div class="status-bar">
+        <div>当前观众端状态: <strong id="currentPhaseLabel" style="color:#fbbf24;">读取中...</strong></div>
+        <button class="btn btn-red" onclick="endAllVotes()" style="margin:0;">⏹ 结束/收回投票</button>
     </div>
 
-    <!-- 预览区 -->
-    <div class="card preview-box">
-        <h3>👁️ 当前大众界面实时预览</h3>
-        <div id="voterPreview" class="preview-content"></div>
+    <div class="section">
+        <h2>👥 1. 观众白名单设置</h2>
+        <p style="font-size: 0.9em; color: #64748b;">每行输入一个名字。只有名单里的人才能投票。（如果留空，则所有人都能投）</p>
+        <textarea id="voterListInput" placeholder="张三&#10;李四&#10;王五"></textarea>
+        <button class="btn" onclick="saveVoters()">💾 保存名单</button>
     </div>
 
-    <!-- 白名单 -->
-    <div class="card">
-        <h3>👥 投票人白名单</h3>
-        <textarea id="voterNamesList" rows="4"></textarea>
-        <button id="saveVoterNames" class="success">保存名单</button>
+    <div class="section">
+        <h2>🗣️ 2. 最佳辩手配置 & 开启投票</h2>
+        <div><label>正方一辩:</label><input type="text" id="pos1"></div>
+        <div><label>正方二辩:</label><input type="text" id="pos2"></div>
+        <div><label>反方一辩:</label><input type="text" id="pos3"></div>
+        <div><label>反方二辩:</label><input type="text" id="pos4"></div>
+        <button class="btn btn-green" onclick="startDebateVote()">▶️ 保存辩手并开启 [最佳辩手] 投票</button>
+        <div class="result-box" id="debateResult">票数实时结果将显示在这里...</div>
     </div>
 
-    <!-- 最佳辩手管理（含自定义辩手位置） -->
-    <div class="card">
-        <div class="flex-between">
-            <h3>🏆 最佳辩手管理</h3>
-            <div>
-                <button id="startDebateBtn" class="success">开启投票</button>
-                <button id="endDebateBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
-            </div>
-        </div>
-        <input type="text" id="debateTopicInput" placeholder="辩题标题">
-        <div id="positionsContainer" class="positions-grid"></div>
-        <button id="applyDebaters">保存辩手配置</button>
-        <div id="tieArea"></div>
-        <hr>
-        <h4>📊 实时票数</h4>
-        <div id="debateStats"></div>
-        <div id="debateDetails"></div>
+    <div class="section">
+        <h2>⚔️ 3. 平票 PK 投票 (仅当平票时使用)</h2>
+        <p style="font-size: 0.9em; color: #64748b;">请勾选需要进入PK的辩手：</p>
+        <div id="pkSelectionArea" style="margin: 10px 0;">(请先保存辩手名单)</div>
+        <button class="btn btn-green" onclick="startPKVote()">▶️ 开启 [PK决胜] 投票</button>
+        <div class="result-box" id="pkResult">PK票数结果...</div>
     </div>
 
-    <!-- 辩题投票管理（包含自定义辩题） -->
-    <div class="card">
-        <div class="flex-between">
-            <h3>📋 辩题投票</h3>
-            <div>
-                <button id="sendTopicsBtn" class="success">发送辩题</button>
-                <button id="endTopicsBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
-            </div>
-        </div>
-        <div id="topicsList"></div>
-        <hr>
-        <h4>📊 辩题统计（含投票人）</h4>
-        <div id="topicsStats"></div>
+    <div class="section">
+        <h2>📋 4. 辩题配置 & 开启投票</h2>
+        <div><label>辩题 1:</label><input type="text" id="topic1"></div>
+        <div><label>辩题 2:</label><input type="text" id="topic2"></div>
+        <button class="btn btn-green" onclick="startTopicVote()">▶️ 保存辩题并开启 [辩题] 投票</button>
+        <div class="result-box" id="topicResult">辩题票数结果...</div>
     </div>
 
-    <!-- ========== 新增：胜方投票管理 ========== -->
-    <div class="card">
-        <div class="flex-between">
-            <h3>🏅 本次辩论胜方投票</h3>
-            <div>
-                <button id="startWinnerBtn" class="success">开启投票</button>
-                <button id="endWinnerBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
-            </div>
-        </div>
-        <input type="text" id="winnerTopicInput" placeholder="胜方投票标题" value="本次辩论的胜方">
-        <div style="margin-top:0.5rem; font-size:0.9rem; color:#475569;">
-            ✅ 投票人将选择：正方 或 反方
-        </div>
-        <hr>
-        <h4>📊 实时票数</h4>
-        <div id="winnerStats"></div>
-        <div id="winnerDetails" class="vote-detail"></div>
-    </div>
-
-    <!-- 历史记录（带删除全部和单条删除） -->
-    <div class="card">
-        <div class="flex-between">
-            <h3>📜 历史记录</h3>
-            <button id="deleteAllHistoryBtn" class="danger" style="background:#dc2626;">🗑️ 删除全部历史</button>
-        </div>
-        <div id="historyList"></div>
+    <div class="section" style="border-color: #ef4444;">
+        <h2>⚠️ 危险操作</h2>
+        <button class="btn btn-red" onclick="resetAllData()">🗑️ 清空所有票数和数据 (新比赛使用)</button>
     </div>
 </div>
 
 <script>
-    // ========== API 配置（双备用） ==========
+    // 保持和 index.html 一致的双 API Key
     const API_CONFIGS = [
         { apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC", binId: "69c6e9f0aa77b81da9286fee" },
         { apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6", binId: "69c6fdadc3097a1dd569be7c" }
     ];
 
-    let appData = {
-        phase: "waiting",
-        debateTopic: "",
-        positions: [],
-        debateVotes: {},
-        pkVotes: {},
-        topics: [],
-        topicVotes: {},
-        tieCandidates: [],
-        pkModeActive: false,
-        history: [],
-        allowedVoters: [],
-        // 新增胜方投票数据
-        winnerTopic: "本次辩论的胜方",
-        winnerVotes: {}   // { voterName: "pro" 或 "con" }   pro=正方, con=反方
-    };
-    let lastHistoryLength = -1;
+    let appData = { phase: "waiting", positions: [], debateVotes: {}, pkVotes: {}, topics: [], topicVotes: {}, tieCandidates: [], allowedVoters: [] };
 
-    // ========== 通用请求函数 ==========
     async function requestWithFallback(method, data = null) {
-        for (let cfg of API_CONFIGS) {
+        for (let i = 0; i < API_CONFIGS.length; i++) {
+            const cfg = API_CONFIGS[i];
+            const url = `https://api.jsonbin.io/v3/b/${cfg.binId}/latest`;
             try {
                 if (method === 'GET') {
-                    const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
-                        headers: { 'X-Master-Key': cfg.apiKey }
-                    });
-                    if (resp.ok) {
-                        const result = await resp.json();
-                        return { success: true, data: result.record };
-                    }
-                } else {
+                    const resp = await fetch(url, { headers: { 'X-Master-Key': cfg.apiKey } });
+                    if (resp.ok) { const result = await resp.json(); return { success: true, data: result.record }; }
+                } else if (method === 'PUT') {
                     const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey },
-                        body: JSON.stringify(data)
+                        method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey }, body: JSON.stringify(data)
                     });
                     if (resp.ok) return { success: true };
                 }
-            } catch(e) {}
+            } catch (e) { console.error("API请求报错", e); }
         }
         return { success: false };
     }
 
     async function loadData() {
-        const r = await requestWithFallback('GET');
-        return r.success ? r.data : null;
+        const result = await requestWithFallback('GET');
+        if (result.success) { appData = { ...appData, ...result.data }; renderAdminUI(); }
     }
 
     async function pushToRemote() {
-        const r = await requestWithFallback('PUT', appData);
-        return r.success;
+        document.getElementById("currentPhaseLabel").innerText = "正在同步到云端...";
+        const result = await requestWithFallback('PUT', appData);
+        if (result.success) renderAdminUI();
+        else alert("同步失败，请检查网络或额度！");
     }
 
-    // API 状态检测
-    async function checkAPIStatus() {
-        const container = document.getElementById("apiStatusContainer");
-        if (!container) return;
-        let html = "";
-        for (let i = 0; i < API_CONFIGS.length; i++) {
-            const cfg = API_CONFIGS[i];
-            try {
-                const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
-                    headers: { 'X-Master-Key': cfg.apiKey }
-                });
-                if (resp.ok) {
-                    html += `<div class="api-item"><span><span style="color:#10b981;">✅</span> 配置 ${i+1}</span><span class="api-badge">有效</span></div>`;
-                } else {
-                    html += `<div class="api-item"><span><span style="color:#ef4444;">❌</span> 配置 ${i+1}</span><span class="api-badge">无效 (HTTP ${resp.status})</span></div>`;
-                }
-            } catch(e) {
-                html += `<div class="api-item"><span><span style="color:#ef4444;">⚠️</span> 配置 ${i+1}</span><span class="api-badge">请求失败</span></div>`;
-            }
-        }
-        container.innerHTML = html;
-    }
+    // --- 核心控制逻辑 ---
 
-    // 工具函数
-    function getActiveDebaters() {
-        return (appData.positions || []).filter(p => p.name && p.name.trim() !== "");
-    }
-    function getActiveTopics() {
-        return (appData.topics || []).filter(t => t.title && t.title.trim() !== "");
-    }
-    function getDebateVoteCounts() {
-        const c = {};
-        for (let d of getActiveDebaters()) c[d.key] = 0;
-        for (let v in appData.debateVotes) c[appData.debateVotes[v]]++;
-        return c;
-    }
-    function detectTie() {
-        const c = getDebateVoteCounts();
-        let max = -1, top = [];
-        for (let k in c) {
-            if (c[k] > max) { max = c[k]; top = [k]; }
-            else if (c[k] === max && max !== -1) top.push(k);
-        }
-        return top.length >= 2 && max > 0 ? { isTie: true, candidates: top, maxVotes: max } : { isTie: false };
-    }
-    function saveHistory(type, title, details) {
-        const now = new Date();
-        appData.history.unshift({
-            date: now.toLocaleDateString('zh-CN'),
-            time: now.toLocaleTimeString('zh-CN'),
-            type, title, details
-        });
-        pushToRemote();
-    }
-    async function deleteHistoryItem(index) {
-        if (confirm("确定删除这条历史记录？")) {
-            appData.history.splice(index, 1);
+    // 结束/收回所有投票 (痛点3核心逻辑)
+    async function endAllVotes() {
+        if(confirm("确定要收回投票界面吗？大众端将变回等待画面。")) {
+            appData.phase = "waiting";
             await pushToRemote();
-            renderHistory();
-            alert("已删除");
-        }
-    }
-    async function deleteAllHistory() {
-        if (confirm("⚠️ 确定删除所有历史记录？此操作不可撤销。")) {
-            appData.history = [];
-            await pushToRemote();
-            renderHistory();
-            alert("所有历史记录已删除");
+            alert("已成功收回投票！");
         }
     }
 
-    // 渲染界面
-    function renderPositionsUI() {
-        const container = document.getElementById("positionsContainer");
-        container.innerHTML = "";
-        appData.positions.forEach(p => {
-            container.innerHTML += `
-                <div class="position-item">
-                    <div class="position-label">${p.label}</div>
-                    <input type="text" class="position-input" data-key="${p.key}" value="${escapeHtml(p.name)}" placeholder="辩手姓名">
-                </div>
-            `;
-        });
-    }
-    function collectPositions() {
-        document.querySelectorAll(".position-input").forEach(inp => {
-            const key = inp.dataset.key;
-            const pos = appData.positions.find(p => p.key === key);
-            if (pos) pos.name = inp.value.trim();
-        });
-    }
-
-    function renderAdminUI(forceInit) {
-        if (forceInit) {
-            document.getElementById("voterNamesList").value = (appData.allowedVoters || []).join("\n");
-            document.getElementById("debateTopicInput").value = appData.debateTopic || "";
-            document.getElementById("winnerTopicInput").value = appData.winnerTopic || "本次辩论的胜方";
-            renderPositionsUI();
-            const tdiv = document.getElementById("topicsList");
-            tdiv.innerHTML = "";
-            (appData.topics || []).forEach((t, idx) => {
-                tdiv.innerHTML += `
-                    <div style="margin-bottom:1rem;">
-                        <label>辩题 ${idx+1}</label>
-                        <input type="text" value="${escapeHtml(t.title)}" data-id="${t.id}" class="topic-title" style="margin-bottom:0.2rem;">
-                    </div>
-                `;
-            });
-        }
-
-        // 预览区（根据当前阶段显示不同预览）
-        const preview = document.getElementById("voterPreview");
-        if (appData.phase === "debateVoting") {
-            const d = getActiveDebaters();
-            preview.innerHTML = `<h4>🏆 最佳辩手投票</h4><div><input disabled placeholder="姓名"></div>` +
-                d.map(dd => `<div class="preview-item">⭕ ${dd.label} · ${dd.name}</div>`).join('') +
-                `<button disabled>提交投票</button>`;
-        } else if (appData.phase === "pkVoting") {
-            const pk = appData.tieCandidates.map(k => appData.positions.find(p => p.key === k)).filter(p => p);
-            preview.innerHTML = `<h4>⚔️ 平票加赛</h4>` +
-                pk.map(d => `<div class="preview-item">⭕ ${d.label} · ${d.name}</div>`).join('') +
-                `<button disabled>提交PK投票</button>`;
-        } else if (appData.phase === "topicVoting") {
-            const topics = getActiveTopics();
-            preview.innerHTML = `<h4>📋 辩题投票</h4>` +
-                topics.map(t => `<div class="preview-item"><strong>${t.title}</strong><br><span style="font-size:0.8rem;">⭕赞成 ⭕反对 ⭕弃权</span></div>`).join('') +
-                `<button disabled>提交投票</button>`;
-        } else if (appData.phase === "winnerVoting") {
-            preview.innerHTML = `<h4>🏅 胜方投票</h4><div><input disabled placeholder="姓名"></div>
-                <div class="preview-item">⭕ 正方</div>
-                <div class="preview-item">⭕ 反方</div>
-                <button disabled>提交投票</button>`;
-        } else {
-            preview.innerHTML = `<div style="text-align:center;"><h4>⏳ 等待管理员操作</h4><div class="notice-text">📢 结果公布在会议中</div></div>`;
-        }
-
-        // 辩手统计
-        const counts = getDebateVoteCounts();
-        const active = getActiveDebaters();
-        let stats = "", details = "投票明细：<br>";
-        active.forEach(d => { stats += `<div class="stat-row"><span>${d.label} · ${d.name}</span><strong>${counts[d.key] || 0} 票</strong></div>`; });
-        for (let v in appData.debateVotes) {
-            const d = appData.positions.find(p => p.key === appData.debateVotes[v]);
-            details += `${v} → ${d?.label} ${d?.name}<br>`;
-        }
-        document.getElementById("debateStats").innerHTML = stats || "暂无";
-        document.getElementById("debateDetails").innerHTML = Object.keys(appData.debateVotes).length ? details : "尚未有人投票";
-
-        // 平票
-        const tie = detectTie();
-        const tieDiv = document.getElementById("tieArea");
-        if (tie.isTie && appData.phase === "debateVoting" && !appData.pkModeActive) {
-            const names = tie.candidates.map(k => appData.positions.find(p => p.key === k).label).join("、");
-            tieDiv.innerHTML = `<div style="background:#fef3c7; padding:1rem; border-left:4px solid #f59e0b;">⚠️ 平票最高 ${tie.maxVotes} 票：${names} <button id="startPKBtn" class="warning">开启PK加赛</button></div>`;
-            document.getElementById("startPKBtn").onclick = async () => {
-                const debateDetails = getActiveDebaters().map(d => {
-                    let voters = [];
-                    for (let n in appData.debateVotes) if (appData.debateVotes[n] === d.key) voters.push(n);
-                    return { candidate: d.name, votes: voters.length, voters };
-                });
-                saveHistory("debate", (appData.debateTopic || "未填写辩题") + " [第一轮平票记录]", debateDetails);
-                appData.tieCandidates = tie.candidates;
-                appData.pkModeActive = true;
-                appData.pkVotes = {};
-                appData.phase = "pkVoting";
-                await pushToRemote();
-                renderAdminUI(false);
-                alert("已开启PK加赛");
-            };
-        } else tieDiv.innerHTML = "";
-
-        // 辩题统计
-        let topicStats = "";
-        for (let t of getActiveTopics()) {
-            const votes = appData.topicVotes[t.id] || {};
-            let agree = [], disagree = [], abstain = [];
-            for (let v in votes) {
-                if (votes[v] === "agree") agree.push(v);
-                else if (votes[v] === "disagree") disagree.push(v);
-                else abstain.push(v);
-            }
-            topicStats += `
-                <div class="stat-row" style="flex-direction:column; align-items:flex-start;">
-                    <strong>${t.title}</strong>
-                    <span>赞成 ${agree.length} 票</span><div class="voter-detail">${agree.join(', ') || '无'}</div>
-                    <span>反对 ${disagree.length} 票</span><div class="voter-detail">${disagree.join(', ') || '无'}</div>
-                    <span>弃权 ${abstain.length} 票</span><div class="voter-detail">${abstain.join(', ') || '无'}</div>
-                </div><hr>
-            `;
-        }
-        document.getElementById("topicsStats").innerHTML = topicStats;
-
-        // 胜方投票统计
-        let proVoters = [], conVoters = [];
-        for (let v in appData.winnerVotes) {
-            if (appData.winnerVotes[v] === "pro") proVoters.push(v);
-            else if (appData.winnerVotes[v] === "con") conVoters.push(v);
-        }
-        document.getElementById("winnerStats").innerHTML = `
-            <div class="stat-row"><span>正方</span><strong>${proVoters.length} 票</strong></div>
-            <div class="stat-row"><span>反方</span><strong>${conVoters.length} 票</strong></div>
-        `;
-        document.getElementById("winnerDetails").innerHTML = `
-            <div>正方投票人：${proVoters.join(', ') || '无'}</div>
-            <div>反方投票人：${conVoters.join(', ') || '无'}</div>
-        `;
-
-        // 历史
-        if (appData.history.length !== lastHistoryLength) {
-            renderHistory();
-            lastHistoryLength = appData.history.length;
-        }
-    }
-
-    function renderHistory() {
-        const histDiv = document.getElementById("historyList");
-        if (!appData.history.length) { histDiv.innerHTML = "<div class='status-msg'>暂无历史记录</div>"; return; }
-        let html = "";
-        appData.history.forEach((h, idx) => {
-            let isTie = h.title?.includes('[第一轮平票记录]');
-            let prefix = h.type === 'topic' ? '📋 辩题投票' : h.type === 'pk' ? '⚔️ 决胜PK加赛' : h.type === 'winner' ? '🏅 胜方投票' : isTie ? '⚖️ 第一轮平票明细' : '🏆 最佳辩手结果';
-            let cleanTitle = h.title?.replace(' [第一轮平票记录]', '') || '';
-            html += `<div class="history-item">
-                <div class="history-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                    <span>📅 ${h.date} ${h.time.slice(0,5)} <strong>${prefix}</strong></span>
-                    <span><button class="delete-btn" data-index="${idx}" onclick="event.stopPropagation(); deleteHistoryItem(${idx})">🗑️ 删除</button> ▼</span>
-                </div>
-                <div class="history-body">`;
-            if (h.type === 'debate' || h.type === 'pk') {
-                html += `<div style="font-weight:bold;">辩题：${cleanTitle}</div>`;
-                let max = Math.max(...h.details.map(d => d.votes), 0);
-                h.details.forEach(d => {
-                    if (d.votes > 0 || (d.votes === max && max > 0)) {
-                        let star = (d.votes === max && max > 0) ? '★' : '';
-                        html += `<div><span>${star} ${d.candidate}</span> <strong>${d.votes} 票</strong><div style="font-size:0.8rem;">投票人: ${d.voters.join(', ') || '无'}</div></div>`;
-                    }
-                });
-            } else if (h.type === 'topic') {
-                h.details.forEach(d => {
-                    html += `<div><strong>Q: ${d.question}</strong><br>赞成 ${d.agreeCount} 票 (${d.agreeVoters?.join(', ') || '无'})<br>反对 ${d.disagreeCount} 票 (${d.disagreeVoters?.join(', ') || '无'})<br>弃权 ${d.abstainCount} 票 (${d.abstainVoters?.join(', ') || '无'})</div><hr>`;
-                });
-            } else if (h.type === 'winner') {
-                html += `<div><strong>${h.title}</strong><br>正方 ${h.details.pro} 票 (${h.details.proVoters?.join(', ') || '无'})<br>反方 ${h.details.con} 票 (${h.details.conVoters?.join(', ') || '无'})</div>`;
-            }
-            html += `</div></div>`;
-        });
-        histDiv.innerHTML = html;
-    }
-
-    // 事件绑定
-    document.getElementById("saveVoterNames").onclick = async () => {
-        appData.allowedVoters = document.getElementById("voterNamesList").value.split("\n").map(s => s.trim()).filter(s => s);
+    async function saveVoters() {
+        const text = document.getElementById("voterListInput").value;
+        appData.allowedVoters = text.split('\n').map(n => n.trim()).filter(n => n);
         await pushToRemote();
-        alert("名单保存成功");
-    };
-    document.getElementById("applyDebaters").onclick = async () => {
-        collectPositions();
-        appData.debateTopic = document.getElementById("debateTopicInput").value.trim();
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("辩手配置已保存");
-    };
-    document.getElementById("startDebateBtn").onclick = async () => {
+        alert("名单保存成功！");
+    }
+
+    async function startDebateVote() {
+        appData.positions = [
+            { key: "p1", label: "正方一辩", name: document.getElementById("pos1").value },
+            { key: "p2", label: "正方二辩", name: document.getElementById("pos2").value },
+            { key: "p3", label: "反方一辩", name: document.getElementById("pos3").value },
+            { key: "p4", label: "反方二辩", name: document.getElementById("pos4").value }
+        ];
         appData.phase = "debateVoting";
-        appData.debateVotes = {};
-        appData.pkVotes = {};
-        appData.pkModeActive = false;
-        appData.tieCandidates = [];
         await pushToRemote();
-        renderAdminUI(false);
-        alert("最佳辩手投票已开启");
-    };
-    document.getElementById("endDebateBtn").onclick = async () => {
-        if (appData.phase !== "debateVoting" && appData.phase !== "pkVoting") return;
-        const active = appData.pkModeActive ? appData.tieCandidates.map(k => appData.positions.find(p => p.key === k)) : getActiveDebaters();
-        const target = appData.pkModeActive ? appData.pkVotes : appData.debateVotes;
-        const details = active.map(d => {
-            if (!d) return null;
-            const voters = [];
-            for (let v in target) if (target[v] === d.key) voters.push(v);
-            return { candidate: d.name, votes: voters.length, voters };
-        }).filter(Boolean);
-        saveHistory(appData.pkModeActive ? "pk" : "debate", appData.debateTopic || "未填写辩题", details);
-        appData.phase = "waiting";
+    }
+
+    async function startPKVote() {
+        const checkboxes = document.querySelectorAll('.pk-check:checked');
+        appData.tieCandidates = Array.from(checkboxes).map(cb => cb.value);
+        if (appData.tieCandidates.length < 2) return alert("请至少勾选2名辩手进行PK！");
+        appData.phase = "pkVoting";
         await pushToRemote();
-        renderAdminUI(false);
-        alert("投票已结束，记录已保存");
-    };
-    document.getElementById("sendTopicsBtn").onclick = async () => {
-        document.querySelectorAll(".topic-title").forEach(inp => {
-            const t = appData.topics.find(x => x.id === inp.dataset.id);
-            if (t) t.title = inp.value.trim();
-        });
-        appData.topicVotes = { t1: {}, t2: {}, t3: {} };
+    }
+
+    async function startTopicVote() {
+        appData.topics = [
+            { id: "t1", title: document.getElementById("topic1").value },
+            { id: "t2", title: document.getElementById("topic2").value }
+        ].filter(t => t.title.trim() !== "");
+        if (appData.topics.length === 0) return alert("至少输入一个辩题");
         appData.phase = "topicVoting";
         await pushToRemote();
-        renderAdminUI(false);
-        alert("辩题投票已发送");
-    };
-    document.getElementById("endTopicsBtn").onclick = async () => {
-        if (appData.phase !== "topicVoting") return;
-        const details = appData.topics.map(t => {
-            const votes = appData.topicVotes[t.id] || {};
-            let a=0, d=0, ab=0, aV=[], dV=[], abV=[];
-            for (let v in votes) {
-                if (votes[v] === "agree") { a++; aV.push(v); }
-                else if (votes[v] === "disagree") { d++; dV.push(v); }
-                else { ab++; abV.push(v); }
-            }
-            return { question: t.title, agreeCount: a, disagreeCount: d, abstainCount: ab, agreeVoters: aV, disagreeVoters: dV, abstainVoters: abV };
-        });
-        saveHistory("topic", "辩题投票", details);
-        appData.phase = "waiting";
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("辩题投票已结束，记录已保存");
-    };
-
-    // 胜方投票事件
-    document.getElementById("startWinnerBtn").onclick = async () => {
-        appData.phase = "winnerVoting";
-        appData.winnerVotes = {};
-        appData.winnerTopic = document.getElementById("winnerTopicInput").value.trim();
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("胜方投票已开启");
-    };
-    document.getElementById("endWinnerBtn").onclick = async () => {
-        if (appData.phase !== "winnerVoting") return;
-        let proVoters = [], conVoters = [];
-        for (let v in appData.winnerVotes) {
-            if (appData.winnerVotes[v] === "pro") proVoters.push(v);
-            else if (appData.winnerVotes[v] === "con") conVoters.push(v);
-        }
-        const details = {
-            pro: proVoters.length,
-            con: conVoters.length,
-            proVoters: proVoters,
-            conVoters: conVoters
-        };
-        saveHistory("winner", appData.winnerTopic, details);
-        appData.phase = "waiting";
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("胜方投票已结束，记录已保存");
-    };
-
-    document.getElementById("deleteAllHistoryBtn").onclick = deleteAllHistory;
-
-    function escapeHtml(s) { return s ? s.replace(/[&<>]/g, function(m) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]; }) : ""; }
-
-    let isSyncing = false;
-    async function sync() {
-        if (isSyncing) return;
-        isSyncing = true;
-        try {
-            await checkAPIStatus();
-            const remote = await loadData();
-            if (remote) {
-                const oldPhase = appData.phase;
-                appData = { ...appData, ...remote };
-                if (!appData.topicVotes) appData.topicVotes = {};
-                if (!appData.debateVotes) appData.debateVotes = {};
-                if (!appData.pkVotes) appData.pkVotes = {};
-                if (!appData.allowedVoters) appData.allowedVoters = [];
-                if (!appData.positions) appData.positions = [];
-                if (!appData.topics) appData.topics = [];
-                if (!appData.winnerVotes) appData.winnerVotes = {};
-
-                if (oldPhase !== appData.phase) renderAdminUI(true);
-                else renderAdminUI(false);
-            } else renderAdminUI(true);
-        } catch(e) { console.error(e); }
-        finally { isSyncing = false; }
     }
 
-    setInterval(sync, 3000);
-    sync();
-    window.deleteHistoryItem = deleteHistoryItem;
+    async function resetAllData() {
+        if (confirm("⚠️ 警告：这将清空所有历史投票记录和当前状态！仅在准备下一场新比赛时使用。")) {
+            appData = { phase: "waiting", positions: [], debateVotes: {}, pkVotes: {}, topics: [], topicVotes: {}, tieCandidates: [], allowedVoters: [] };
+            await pushToRemote();
+            alert("数据已清空，系统焕然一新！");
+        }
+    }
+
+    // --- 界面渲染逻辑 ---
+    function renderAdminUI() {
+        // 状态文本映射
+        const phaseMap = { "waiting": "⏳ 等待中 (未开启投票)", "debateVoting": "🏆 最佳辩手投票中...", "pkVoting": "⚔️ PK投票中...", "topicVoting": "📋 辩题投票中..." };
+        document.getElementById("currentPhaseLabel").innerText = phaseMap[appData.phase] || appData.phase;
+
+        // 填充输入框
+        document.getElementById("voterListInput").value = (appData.allowedVoters || []).join('\n');
+        (appData.positions || []).forEach(p => {
+            if (p.key === "p1") document.getElementById("pos1").value = p.name;
+            if (p.key === "p2") document.getElementById("pos2").value = p.name;
+            if (p.key === "p3") document.getElementById("pos3").value = p.name;
+            if (p.key === "p4") document.getElementById("pos4").value = p.name;
+        });
+        (appData.topics || []).forEach(t => {
+            if (t.id === "t1") document.getElementById("topic1").value = t.title;
+            if (t.id === "t2") document.getElementById("topic2").value = t.title;
+        });
+
+        // 渲染PK复选框
+        const pkArea = document.getElementById("pkSelectionArea");
+        pkArea.innerHTML = (appData.positions || []).filter(p => p.name).map(p => 
+            `<label style="display:inline-block; margin-right:15px; font-weight:normal;">
+                <input type="checkbox" class="pk-check" value="${p.key}"> ${p.label} (${p.name})
+            </label>`
+        ).join('');
+
+        // 统计票数展示
+        document.getElementById("debateResult").innerText = formatDebateVotes();
+        document.getElementById("pkResult").innerText = formatPKVotes();
+        document.getElementById("topicResult").innerText = formatTopicVotes();
+    }
+
+    function formatDebateVotes() {
+        let counts = {};
+        Object.values(appData.debateVotes || {}).forEach(k => counts[k] = (counts[k] || 0) + 1);
+        return (appData.positions || []).map(p => `${p.label} (${p.name}): ${counts[p.key] || 0} 票`).join('\n') || "暂无数据";
+    }
+
+    function formatPKVotes() {
+        let counts = {};
+        Object.values(appData.pkVotes || {}).forEach(k => counts[k] = (counts[k] || 0) + 1);
+        return (appData.positions || []).map(p => `${p.label} (${p.name}): ${counts[p.key] || 0} 票`).join('\n') || "暂无数据";
+    }
+
+    function formatTopicVotes() {
+        if (!appData.topics || appData.topics.length === 0) return "暂无辩题数据";
+        let res = "";
+        appData.topics.forEach(t => {
+            let agree = 0, disagree = 0, abstain = 0;
+            const votes = appData.topicVotes && appData.topicVotes[t.id] ? appData.topicVotes[t.id] : {};
+            Object.values(votes).forEach(v => {
+                if (v === 'agree') agree++;
+                if (v === 'disagree') disagree++;
+                if (v === 'abstain') abstain++;
+            });
+            res += `【${t.title}】\n赞成: ${agree}票 | 反对: ${disagree}票 | 弃权: ${abstain}票\n\n`;
+        });
+        return res;
+    }
+
+    // 后台页面每5秒自动刷新一次，以便你能实时看到票数涨动
+    setInterval(loadData, 5000);
+    loadData();
 </script>
 </body>
 </html>
