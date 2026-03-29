@@ -3,171 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>系统管理控制台 - 完整版</title>
+    <title>辩论赛投票系统 - 管理员控制台</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #1e293b; color: #333; padding: 1rem; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2 { font-size: 1.5rem; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
-        h3 { font-size: 1.2rem; margin: 1rem 0 0.5rem; color: #1e293b; }
-        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; }
-        input, textarea { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
-        button { background: #3b82f6; border: none; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 500; }
-        button.danger { background: #ef4444; } button.success { background: #10b981; } button.warning { background: #f59e0b; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .stat-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px dashed #cbd5e1; }
-        .history-item { background: #fff; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #cbd5e1; overflow: hidden; }
-        .history-header { background: #f1f5f9; padding: 0.8rem 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .history-body { padding: 1rem; display: none; border-top: 1px solid #cbd5e1; }
-        .history-body.open { display: block; }
-        hr { margin: 1rem 0; border: none; border-top: 1px solid #e2e8f0; }
-        .preview-box { background: #eff6ff; border: 2px solid #bfdbfe; }
-        .preview-content { background: white; padding: 1rem; border-radius: 0.8rem; margin-top: 0.5rem; border: 1px solid #cbd5e1; pointer-events: none; opacity: 0.9; }
-        .preview-content h4 { text-align: center; margin-bottom: 1rem; font-size: 1.2rem; }
-        .preview-item { background: #f8fafc; padding: 0.6rem; margin-bottom: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; }
-        .positions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin: 0.5rem 0; }
-        .position-item { background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem; }
-        .position-label { font-weight: bold; font-size: 0.85rem; color: #475569; margin-bottom: 0.3rem; }
-        .position-input { width: 100%; padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.3rem; font-size: 0.9rem; }
-        .voter-detail { font-size: 0.85rem; color: #475569; background: #f1f5f9; padding: 0.3rem; border-radius: 0.3rem; margin-top: 0.3rem; }
-        .api-status { background: #fef9e3; border-left: 4px solid #f59e0b; }
-        .api-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0; }
-        .api-badge { font-family: monospace; font-size: 0.8rem; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 0.5rem; }
-        .api-link { color: #3b82f6; text-decoration: none; font-size: 0.85rem; }
-        .delete-btn { background: #dc2626; padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.5rem; border-radius: 0.3rem; cursor: pointer; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; padding: 1rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 1.5rem; color: #0f172a; font-size: 1.8rem; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card h3 { margin-bottom: 1rem; color: #334155; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 锁定视图样式 */
-        .locked-view { background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; min-height: 3rem; word-break: break-all; margin-top: 0.5rem; color: #475569; }
-        .locked-topic { background: #f1f5f9; padding: 0.6rem; border-radius: 0.5rem; margin-bottom: 0.5rem; border: 1px solid #cbd5e1; font-weight: 500; }
+        button { background: #3b82f6; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: 0.2s; }
+        button:hover { background: #2563eb; }
+        button.danger { background: #ef4444; } button.danger:hover { background: #dc2626; }
+        button.warning { background: #f59e0b; } button.warning:hover { background: #d97706; }
+        button.outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; } button.outline:hover { background: #f1f5f9; }
+        
+        input, textarea { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; margin-bottom: 0.5rem; font-family: inherit; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .control-group { background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+        .control-group h4 { margin-bottom: 0.5rem; color: #0f172a; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        
+        .positions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
+        .position-item { background: #f8fafc; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; text-align: center; }
+        .position-label { font-size: 0.8rem; color: #64748b; margin-bottom: 0.2rem; }
+        
+        .stat-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed #e2e8f0; }
+        .voter-detail { font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; }
+        
+        .api-item { display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 0.3rem 0.6rem; border-radius: 2rem; font-size: 0.85rem; margin-right: 0.5rem; margin-bottom: 0.5rem; }
+        .api-badge { background: #e2e8f0; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.75rem; }
         
         /* 弹窗样式 */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-        .modal { background: white; padding: 1.5rem; border-radius: 1rem; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal h3 { margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 1rem; padding: 1.5rem; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; padding: 0; }
         
-        @media (max-width: 700px) { .positions-grid { grid-template-columns: 1fr; } }
+        /* 预览区及其他 */
+        .preview-item { background: #e2e8f0; padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.5rem; color: #64748b; }
+        .history-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden; }
+        .history-header { padding: 0.8rem; cursor: pointer; display: flex; justify-content: space-between; background: #f1f5f9; font-weight: 500; }
+        .history-body { display: none; padding: 1rem; border-top: 1px solid #e2e8f0; }
+        .history-body.open { display: block; }
     </style>
 </head>
 <body>
-<div id="adminPanel" class="container">
-    <h2>⚙️ 投票系统指挥中心</h2>
 
-    <div class="card api-status">
-        <h3>📡 API 状态监控</h3>
-        <div id="apiStatusContainer"></div>
-        <div style="font-size:0.8rem; margin-top:0.5rem;">
-            💡 免费额度：每月 100 次写入（PUT），读取不限。<br>
-            🔗 <a href="https://jsonbin.io/account" target="_blank" class="api-link">点击查看剩余写入次数</a>
-        </div>
-    </div>
+<div class="container">
+    <h1>👨‍💻 管理员控制台</h1>
+    
+    <div style="margin-bottom: 1rem;" id="apiStatusContainer"></div>
 
-    <div class="card preview-box">
-        <h3>👁️ 当前大众界面实时预览</h3>
-        <div id="voterPreview" class="preview-content"></div>
-    </div>
-
-    <div class="card">
-        <div class="flex-between">
-            <h3>👥 投票人白名单</h3>
-            <button id="openVoterModalBtn" class="warning">📝 修改名单</button>
-        </div>
-        <div id="voterLockedView" class="locked-view">加载中...</div>
-    </div>
-
-    <div class="card">
-        <div class="flex-between">
-            <h3>🏆 最佳辩手管理</h3>
-            <div>
-                <button id="openDebaterModalBtn" class="warning">📝 修改辩手</button>
-                <button id="startDebateBtn" class="success" style="margin-left:0.5rem;">开启投票</button>
-                <button id="endDebateBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
+    <div class="grid-2">
+        <div>
+            <div class="card">
+                <h3>👥 投票人名单 <button class="outline" id="openVoterModalBtn">修改</button></h3>
+                <div id="voterLockedView" style="font-size:0.9rem; line-height:1.5;"></div>
+            </div>
+            
+            <div class="card">
+                <h3>🗣️ 辩手及辩题设置 <button class="outline" id="openDebaterModalBtn">修改</button></h3>
+                <div id="debaterLockedView" style="font-size:0.9rem;"></div>
+            </div>
+            
+            <div class="card">
+                <h3>📋 辩题投票设置 <button class="outline" id="openTopicModalBtn">修改</button></h3>
+                <div id="topicLockedView" style="font-size:0.9rem;"></div>
             </div>
         </div>
-        <div id="debaterLockedView" class="locked-view" style="margin-top:0.8rem;">加载中...</div>
+
+        <div>
+            <div class="card" style="border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1);">
+                <h3 style="color:#2563eb;">🎮 投票控制面板</h3>
+                
+                <div class="control-group">
+                    <h4>🏆 最佳辩手投票 (含平票加赛)</h4>
+                    <div class="btn-group">
+                        <button id="startDebateBtn">开启投票</button>
+                        <button id="endDebateBtn" class="danger">结束投票并保存</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h4>📋 辩题投票</h4>
+                    <div class="btn-group">
+                        <button id="sendTopicsBtn" class="warning">发送辩题</button>
+                        <button id="endTopicsBtn" class="danger">结束辩题并保存</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h4>🏅 胜方投票</h4>
+                    <input type="text" id="winnerTopicInput" placeholder="例如：本次辩论的胜方是">
+                    <div class="btn-group" style="margin-top:0.5rem;">
+                        <button id="startWinnerBtn">开启胜方投票</button>
+                        <button id="endWinnerBtn" class="danger">结束并保存</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📱 观众端实时预览</h3>
+                <div id="voterPreview" style="border:2px dashed #cbd5e1; padding:1rem; border-radius:0.5rem; background:#f8fafc;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📊 实时投票数据</h3>
         
-        <div id="tieArea"></div>
-        <hr>
-        <h4>📊 实时票数</h4>
-        <div id="debateStats"></div>
-        <div id="debateDetails"></div>
+        <div style="margin-bottom:1.5rem;">
+            <h4 style="color:#0f172a; margin-bottom:0.5rem;">最佳辩手 / 平票加赛</h4>
+            <div id="tieArea"></div>
+            <div id="debateStats" class="grid-2" style="margin-bottom:0.5rem;"></div>
+            <details><summary style="cursor:pointer; color:#64748b;">查看投票明细</summary><div id="debateDetails" style="margin-top:0.5rem; font-size:0.9rem; background:#f1f5f9; padding:0.5rem; border-radius:0.5rem;"></div></details>
+        </div>
+        
+        <div style="margin-bottom:1.5rem;">
+            <h4 style="color:#0f172a; margin-bottom:0.5rem;">辩题投票情况</h4>
+            <div id="topicsStats"></div>
+        </div>
+        
+        <div>
+            <h4 style="color:#0f172a; margin-bottom:0.5rem;">胜方投票情况</h4>
+            <div id="winnerStats"></div>
+            <details><summary style="cursor:pointer; color:#64748b;">查看投票明细</summary><div id="winnerDetails" style="margin-top:0.5rem; font-size:0.9rem; background:#f1f5f9; padding:0.5rem; border-radius:0.5rem;"></div></details>
+        </div>
     </div>
 
     <div class="card">
-        <div class="flex-between">
-            <h3>📋 辩题投票</h3>
-            <div>
-                <button id="openTopicModalBtn" class="warning">📝 修改辩题</button>
-                <button id="sendTopicsBtn" class="success" style="margin-left:0.5rem;">发送辩题</button>
-                <button id="endTopicsBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
-            </div>
-        </div>
-        <div id="topicLockedView" style="margin-top:0.8rem;"></div>
-        <hr>
-        <h4>📊 辩题统计（含投票人）</h4>
-        <div id="topicsStats"></div>
+        <h3>📂 历史结果记录 <button id="deleteAllHistoryBtn" class="danger" style="padding:0.3rem 0.6rem; font-size:0.8rem;">清空历史</button></h3>
+        <div id="historyList"></div>
     </div>
 
-    <div class="card">
-        <div class="flex-between">
-            <h3>🏅 本次辩论胜方投票</h3>
-            <div>
-                <button id="startWinnerBtn" class="success">开启投票</button>
-                <button id="endWinnerBtn" class="danger" style="margin-left:0.5rem;">结束 & 保存</button>
-            </div>
-        </div>
-        <input type="text" id="winnerTopicInput" placeholder="胜方投票标题" value="本次辩论的胜方" style="margin-top:0.5rem;">
-        <div style="margin-top:0.5rem; font-size:0.9rem; color:#475569;">
-            ✅ 投票人将选择：正方 或 反方
-        </div>
-        <hr>
-        <h4>📊 实时票数</h4>
-        <div id="winnerStats"></div>
-        <div id="winnerDetails" class="vote-detail"></div>
-    </div>
+</div>
 
-    <div class="card">
-        <div class="flex-between">
-            <h3>📜 历史记录</h3>
-            <button id="deleteAllHistoryBtn" class="danger" style="background:#dc2626;">🗑️ 删除全部历史</button>
+<div class="modal" id="voterModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>修改投票人名单</h3>
+            <button class="close-btn closeVoterModal">×</button>
         </div>
-        <div id="historyList" style="margin-top:0.5rem;"></div>
+        <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.5rem;">每行输入一个姓名，名单内的人才能提交投票。</p>
+        <textarea id="voterNamesInput" rows="10" placeholder="张三&#10;李四"></textarea>
+        <button id="saveVoterNamesBtn" style="width:100%; margin-top:1rem;">保存并锁定名单</button>
     </div>
 </div>
 
-<div id="voterModal" class="modal-overlay">
-    <div class="modal">
-        <h3>📝 编辑投票人白名单</h3>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.5rem;">请在此输入投票人姓名（每行输入一个）</p>
-        <textarea id="voterNamesInput" rows="10"></textarea>
-        <div style="text-align:right; margin-top:1rem;">
-            <button class="closeVoterModal" style="background:#64748b;">取消</button>
-            <button id="saveVoterNamesBtn" class="success" style="margin-left:0.5rem;">保存并锁定 🔒</button>
+<div class="modal" id="debaterModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>设置辩题与辩手 (8人制)</h3>
+            <button class="close-btn closeDebaterModal">×</button>
         </div>
-    </div>
-</div>
-
-<div id="topicModal" class="modal-overlay">
-    <div class="modal">
-        <h3>📝 编辑辩题</h3>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.5rem;">修改下方辩题内容，保存后将锁定</p>
-        <div id="modalTopicsList"></div>
-        <div style="text-align:right; margin-top:1rem;">
-            <button class="closeTopicModal" style="background:#64748b;">取消</button>
-            <button id="saveTopicsBtn" class="success" style="margin-left:0.5rem;">保存并锁定 🔒</button>
-        </div>
-    </div>
-</div>
-
-<div id="debaterModal" class="modal-overlay">
-    <div class="modal">
-        <h3>📝 编辑辩手与辩题</h3>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom:0.5rem;">设置本次辩题标题及对应的辩手姓名</p>
-        <input type="text" id="modalDebateTopicInput" placeholder="请输入辩题标题..." style="margin-bottom:1rem; font-weight:bold;">
+        <label style="font-weight:bold; display:block; margin-bottom:0.3rem;">当前辩题：</label>
+        <input type="text" id="modalDebateTopicInput" placeholder="输入辩题，例如：人工智能是否会取代人类">
+        
+        <label style="font-weight:bold; display:block; margin:1rem 0 0.5rem;">填写辩手姓名 (不需要的位置留空即可)：</label>
         <div id="modalPositionsContainer" class="positions-grid"></div>
-        <div style="text-align:right; margin-top:1rem;">
-            <button class="closeDebaterModal" style="background:#64748b;">取消</button>
-            <button id="saveDebatersBtn" class="success" style="margin-left:0.5rem;">保存并锁定 🔒</button>
+        
+        <button id="saveDebatersBtn" style="width:100%; margin-top:1.5rem;">保存并更新</button>
+    </div>
+</div>
+
+<div class="modal" id="topicModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>设置辩题 (供观众表决)</h3>
+            <button class="close-btn closeTopicModal">×</button>
         </div>
+        <div id="modalTopicsList"></div>
+        <button id="saveTopicsBtn" style="width:100%; margin-top:1rem;">保存并更新</button>
     </div>
 </div>
 
@@ -176,6 +184,14 @@
     const API_CONFIGS = [
         { apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC", binId: "69c6e9f0aa77b81da9286fee" },
         { apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6", binId: "69c6fdadc3097a1dd569be7c" }
+    ];
+
+    // 标准8个辩手位置模板
+    const DEFAULT_POSITIONS = [
+        { key: "正方一辩", label: "正方一辩", name: "" }, { key: "正方二辩", label: "正方二辩", name: "" },
+        { key: "正方三辩", label: "正方三辩", name: "" }, { key: "正方四辩", label: "正方四辩", name: "" },
+        { key: "反方一辩", label: "反方一辩", name: "" }, { key: "反方二辩", label: "反方二辩", name: "" },
+        { key: "反方三辩", label: "反方三辩", name: "" }, { key: "反方四辩", label: "反方四辩", name: "" }
     ];
 
     let appData = {
@@ -221,14 +237,14 @@
             const cfg = API_CONFIGS[i];
             try {
                 const resp = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, { headers: { 'X-Master-Key': cfg.apiKey } });
-                if (resp.ok) html += `<div class="api-item"><span><span style="color:#10b981;">✅</span> 配置 ${i+1}</span><span class="api-badge">有效</span></div>`;
-                else html += `<div class="api-item"><span><span style="color:#ef4444;">❌</span> 配置 ${i+1}</span><span class="api-badge">无效 (HTTP ${resp.status})</span></div>`;
-            } catch(e) { html += `<div class="api-item"><span><span style="color:#ef4444;">⚠️</span> 配置 ${i+1}</span><span class="api-badge">请求失败</span></div>`; }
+                if (resp.ok) html += `<div class="api-item"><span><span style="color:#10b981;">✅</span> 线路 ${i+1}</span><span class="api-badge">正常</span></div>`;
+                else html += `<div class="api-item"><span><span style="color:#ef4444;">❌</span> 线路 ${i+1}</span><span class="api-badge">异常</span></div>`;
+            } catch(e) { html += `<div class="api-item"><span><span style="color:#ef4444;">⚠️</span> 线路 ${i+1}</span><span class="api-badge">断开</span></div>`; }
         }
         container.innerHTML = html;
     }
 
-    // 工具函数
+    // ========== 核心工具函数 ==========
     function getActiveDebaters() { return (appData.positions || []).filter(p => p.name && p.name.trim() !== ""); }
     function getActiveTopics() { return (appData.topics || []).filter(t => t.title && t.title.trim() !== ""); }
     function getDebateVoteCounts() {
@@ -256,86 +272,83 @@
             appData.history.splice(index, 1);
             await pushToRemote();
             renderHistory();
-            alert("已删除");
         }
     }
     async function deleteAllHistory() {
-        if (confirm("⚠️ 确定删除所有历史记录？此操作不可撤销。")) {
+        if (confirm("⚠️ 确定删除所有历史记录？此操作不可撤销！")) {
             appData.history = [];
             await pushToRemote();
             renderHistory();
-            alert("所有历史记录已删除");
         }
     }
 
-    // 渲染界面
+    // ========== 界面渲染 ==========
     function renderAdminUI(forceInit) {
-        // 更新锁定视图 (白名单)
+        // 名单
         document.getElementById("voterLockedView").innerHTML = (appData.allowedVoters && appData.allowedVoters.length > 0) 
             ? appData.allowedVoters.join("、") 
-            : "<span style='color:#94a3b8;'>暂无名单，请点击右上角【修改名单】添加</span>";
+            : "<span style='color:#94a3b8;'>暂无名单，任何人都无法投票</span>";
 
-        // 更新锁定视图 (最佳辩手及辩题)
-        let debaterLockedHTML = `<div style="margin-bottom:0.8rem; border-bottom:1px solid #cbd5e1; padding-bottom:0.5rem;"><strong>当前辩题：</strong>${escapeHtml(appData.debateTopic) || "<span style='color:#94a3b8;'>未设置</span>"}</div>`;
+        // 辩手
+        let debaterLockedHTML = `<div style="margin-bottom:0.8rem;"><strong>辩题：</strong>${escapeHtml(appData.debateTopic) || "<span style='color:#94a3b8;'>未设置</span>"}</div>`;
         if (appData.positions && appData.positions.length > 0) {
             debaterLockedHTML += `<div class="positions-grid">`;
             appData.positions.forEach(p => {
-                const pName = p.name ? `<span style="color:#1e293b; font-weight:500;">${escapeHtml(p.name)}</span>` : `<span style='color:#94a3b8;'>暂无</span>`;
-                debaterLockedHTML += `<div class="position-item" style="border:none; background:transparent; padding:0.2rem;"><div class="position-label">${p.label}</div><div>${pName}</div></div>`;
+                const pName = p.name ? `<span style="color:#1e293b; font-weight:bold;">${escapeHtml(p.name)}</span>` : `<span style='color:#94a3b8;'>留空</span>`;
+                debaterLockedHTML += `<div class="position-item"><div class="position-label">${p.label}</div><div>${pName}</div></div>`;
             });
             debaterLockedHTML += `</div>`;
         }
         document.getElementById("debaterLockedView").innerHTML = debaterLockedHTML;
 
-        // 更新锁定视图 (辩题投票列表)
+        // 辩题
         const lockedTopicDiv = document.getElementById("topicLockedView");
         lockedTopicDiv.innerHTML = "";
         if (appData.topics && appData.topics.length > 0) {
             appData.topics.forEach((t, idx) => {
-                lockedTopicDiv.innerHTML += `<div class="locked-topic">🔹 辩题 ${idx+1}：${escapeHtml(t.title)}</div>`;
+                lockedTopicDiv.innerHTML += `<div style="background:#f1f5f9; padding:0.5rem; border-radius:0.5rem; margin-bottom:0.3rem;">${idx+1}. ${escapeHtml(t.title)}</div>`;
             });
         } else {
-            lockedTopicDiv.innerHTML = "<div class='locked-view'><span style='color:#94a3b8;'>暂无辩题，请点击【修改辩题】添加</span></div>";
+            lockedTopicDiv.innerHTML = "<span style='color:#94a3b8;'>暂无辩题</span>";
         }
 
-        if (forceInit) {
-            document.getElementById("winnerTopicInput").value = appData.winnerTopic || "本次辩论的胜方";
-        }
+        if (forceInit) { document.getElementById("winnerTopicInput").value = appData.winnerTopic || "本次辩论的胜方"; }
 
         // 预览区
         const preview = document.getElementById("voterPreview");
         if (appData.phase === "debateVoting") {
             const d = getActiveDebaters();
-            preview.innerHTML = `<h4>🏆 最佳辩手投票</h4><div><input disabled placeholder="姓名"></div>` + d.map(dd => `<div class="preview-item">⭕ ${dd.label} · ${dd.name}</div>`).join('') + `<button disabled>提交投票</button>`;
+            preview.innerHTML = `<h4 style="margin-bottom:0.5rem;">🏆 最佳辩手投票中...</h4>` + d.map(dd => `<div class="preview-item">⭕ ${dd.label} - ${dd.name}</div>`).join('');
         } else if (appData.phase === "pkVoting") {
             const pk = appData.tieCandidates.map(k => appData.positions.find(p => p.key === k)).filter(p => p);
-            preview.innerHTML = `<h4>⚔️ 平票加赛</h4>` + pk.map(d => `<div class="preview-item">⭕ ${d.label} · ${d.name}</div>`).join('') + `<button disabled>提交PK投票</button>`;
+            preview.innerHTML = `<h4 style="margin-bottom:0.5rem; color:#ef4444;">⚔️ 平票加赛中...</h4>` + pk.map(d => `<div class="preview-item">⭕ ${d.label} - ${d.name}</div>`).join('');
         } else if (appData.phase === "topicVoting") {
             const topics = getActiveTopics();
-            preview.innerHTML = `<h4>📋 辩题投票</h4>` + topics.map(t => `<div class="preview-item"><strong>${t.title}</strong><br><span style="font-size:0.8rem;">⭕赞成 ⭕反对 ⭕弃权</span></div>`).join('') + `<button disabled>提交投票</button>`;
+            preview.innerHTML = `<h4 style="margin-bottom:0.5rem;">📋 辩题投票中...</h4>` + topics.map(t => `<div class="preview-item"><strong>${t.title}</strong><br><span style="font-size:0.8rem;">赞成 / 反对 / 弃权</span></div>`).join('');
         } else if (appData.phase === "winnerVoting") {
-            preview.innerHTML = `<h4>🏅 胜方投票</h4><div><input disabled placeholder="姓名"></div><div class="preview-item">⭕ 正方</div><div class="preview-item">⭕ 反方</div><button disabled>提交投票</button>`;
+            preview.innerHTML = `<h4 style="margin-bottom:0.5rem;">🏅 胜方投票中...</h4><div class="preview-item">⭕ 正方</div><div class="preview-item">⭕ 反方</div>`;
         } else {
-            preview.innerHTML = `<div style="text-align:center;"><h4>⏳ 等待管理员操作</h4><div class="notice-text">📢 结果公布在会议中</div></div>`;
+            preview.innerHTML = `<div style="text-align:center; color:#64748b; padding:2rem 0;">当前无进行中的投票<br><span style="font-size:0.8rem;">（观众显示等待界面）</span></div>`;
         }
 
-        // 辩手统计 & 平票处理
+        // 统计分析
         const counts = getDebateVoteCounts();
         const active = getActiveDebaters();
-        let stats = "", details = "投票明细：<br>";
-        active.forEach(d => { stats += `<div class="stat-row"><span>${d.label} · ${d.name}</span><strong>${counts[d.key] || 0} 票</strong></div>`; });
+        let stats = "", details = "";
+        active.forEach(d => { stats += `<div class="stat-row"><span>${d.label} ${d.name}</span><strong>${counts[d.key] || 0} 票</strong></div>`; });
         for (let v in appData.debateVotes) {
             const d = appData.positions.find(p => p.key === appData.debateVotes[v]);
-            details += `${v} → ${d?.label} ${d?.name}<br>`;
+            details += `<div>${v} 投给：${d?.label} ${d?.name}</div>`;
         }
-        document.getElementById("debateStats").innerHTML = stats || "暂无";
+        document.getElementById("debateStats").innerHTML = stats || "暂无记录";
         document.getElementById("debateDetails").innerHTML = Object.keys(appData.debateVotes).length ? details : "尚未有人投票";
 
+        // 平票处理
         const tie = detectTie();
         const tieDiv = document.getElementById("tieArea");
         if (tie.isTie && appData.phase === "debateVoting" && !appData.pkModeActive) {
-            const names = tie.candidates.map(k => appData.positions.find(p => p.key === k).label).join("、");
-            tieDiv.innerHTML = `<div style="background:#fef3c7; padding:1rem; border-left:4px solid #f59e0b; margin-top:0.5rem;">⚠️ 平票最高 ${tie.maxVotes} 票：${names} <button id="startPKBtn" class="warning">开启PK加赛</button></div>`;
+            const names = tie.candidates.map(k => appData.positions.find(p => p.key === k).label).join(" 与 ");
+            tieDiv.innerHTML = `<div style="background:#fef3c7; padding:1rem; border-left:4px solid #f59e0b; margin-bottom:1rem;">⚠️ 出现平票！最高 ${tie.maxVotes} 票：${names} <button id="startPKBtn" class="warning" style="margin-left:1rem; padding:0.4rem 0.8rem;">立即开启 PK</button></div>`;
             document.getElementById("startPKBtn").onclick = async () => {
                 const debateDetails = getActiveDebaters().map(d => {
                     let voters = [];
@@ -349,7 +362,6 @@
                 appData.phase = "pkVoting";
                 await pushToRemote();
                 renderAdminUI(false);
-                alert("已开启PK加赛");
             };
         } else tieDiv.innerHTML = "";
 
@@ -363,9 +375,9 @@
                 else if (votes[v] === "disagree") disagree.push(v);
                 else abstain.push(v);
             }
-            topicStats += `<div class="stat-row" style="flex-direction:column; align-items:flex-start;"><strong>${t.title}</strong><span>赞成 ${agree.length} 票</span><div class="voter-detail">${agree.join(', ') || '无'}</div><span>反对 ${disagree.length} 票</span><div class="voter-detail">${disagree.join(', ') || '无'}</div><span>弃权 ${abstain.length} 票</span><div class="voter-detail">${abstain.join(', ') || '无'}</div></div><hr>`;
+            topicStats += `<div class="stat-row" style="flex-direction:column; align-items:flex-start; background:#f8fafc; padding:1rem; border:1px solid #e2e8f0; border-radius:0.5rem; margin-bottom:0.5rem;"><strong style="margin-bottom:0.5rem;">${t.title}</strong><span>✅ 赞成：${agree.length} 票 (${agree.join(', ') || '无'})</span><span>❌ 反对：${disagree.length} 票 (${disagree.join(', ') || '无'})</span><span>⚪ 弃权：${abstain.length} 票 (${abstain.join(', ') || '无'})</span></div>`;
         }
-        document.getElementById("topicsStats").innerHTML = topicStats;
+        document.getElementById("topicsStats").innerHTML = topicStats || "暂无记录";
 
         // 胜方统计
         let proVoters = [], conVoters = [];
@@ -373,7 +385,7 @@
             if (appData.winnerVotes[v] === "pro") proVoters.push(v);
             else if (appData.winnerVotes[v] === "con") conVoters.push(v);
         }
-        document.getElementById("winnerStats").innerHTML = `<div class="stat-row"><span>正方</span><strong>${proVoters.length} 票</strong></div><div class="stat-row"><span>反方</span><strong>${conVoters.length} 票</strong></div>`;
+        document.getElementById("winnerStats").innerHTML = `<div class="stat-row"><span>🔵 正方</span><strong>${proVoters.length} 票</strong></div><div class="stat-row"><span>🔴 反方</span><strong>${conVoters.length} 票</strong></div>`;
         document.getElementById("winnerDetails").innerHTML = `<div>正方投票人：${proVoters.join(', ') || '无'}</div><div>反方投票人：${conVoters.join(', ') || '无'}</div>`;
 
         if (appData.history.length !== lastHistoryLength) { renderHistory(); lastHistoryLength = appData.history.length; }
@@ -381,91 +393,73 @@
 
     function renderHistory() {
         const histDiv = document.getElementById("historyList");
-        if (!appData.history.length) { histDiv.innerHTML = "<div class='status-msg'>暂无历史记录</div>"; return; }
+        if (!appData.history.length) { histDiv.innerHTML = "<div style='text-align:center; color:#94a3b8; padding:1rem;'>暂无历史记录</div>"; return; }
         let html = "";
         appData.history.forEach((h, idx) => {
             let isTie = h.title?.includes('[第一轮平票记录]');
-            let prefix = h.type === 'topic' ? '📋 辩题投票' : h.type === 'pk' ? '⚔️ 决胜PK加赛' : h.type === 'winner' ? '🏅 胜方投票' : isTie ? '⚖️ 第一轮平票明细' : '🏆 最佳辩手结果';
+            let prefix = h.type === 'topic' ? '📋 辩题表决' : h.type === 'pk' ? '⚔️ PK加赛' : h.type === 'winner' ? '🏅 胜方票决' : isTie ? '⚖️ 平票存档' : '🏆 最佳辩手';
             let cleanTitle = h.title?.replace(' [第一轮平票记录]', '') || '';
-            html += `<div class="history-item"><div class="history-header" onclick="this.nextElementSibling.classList.toggle('open')"><span>📅 ${h.date} ${h.time.slice(0,5)} <strong>${prefix}</strong></span><span><button class="delete-btn" data-index="${idx}" onclick="event.stopPropagation(); deleteHistoryItem(${idx})">🗑️ 删除</button> ▼</span></div><div class="history-body">`;
+            html += `<div class="history-item"><div class="history-header" onclick="this.nextElementSibling.classList.toggle('open')"><span>📅 ${h.date} ${h.time.slice(0,5)} | <strong>${prefix}</strong></span><span><button onclick="event.stopPropagation(); deleteHistoryItem(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer;">删除</button> ▼</span></div><div class="history-body">`;
+            
             if (h.type === 'debate' || h.type === 'pk') {
-                html += `<div style="font-weight:bold;">辩题：${cleanTitle}</div>`;
+                html += `<div style="font-weight:bold; margin-bottom:0.5rem;">辩题：${cleanTitle}</div>`;
                 let max = Math.max(...h.details.map(d => d.votes), 0);
                 h.details.forEach(d => {
                     if (d.votes > 0 || (d.votes === max && max > 0)) {
-                        let star = (d.votes === max && max > 0) ? '★' : '';
-                        html += `<div><span>${star} ${d.candidate}</span> <strong>${d.votes} 票</strong><div style="font-size:0.8rem;">投票人: ${d.voters.join(', ') || '无'}</div></div>`;
+                        let star = (d.votes === max && max > 0) ? '<span style="color:#f59e0b">★</span>' : '';
+                        html += `<div>${star} <span>${d.candidate}</span> - <strong>${d.votes} 票</strong> <span style="font-size:0.8rem; color:#64748b;">(${d.voters.join(', ') || '无'})</span></div>`;
                     }
                 });
             } else if (h.type === 'topic') {
-                h.details.forEach(d => { html += `<div><strong>Q: ${d.question}</strong><br>赞成 ${d.agreeCount} 票 (${d.agreeVoters?.join(', ') || '无'})<br>反对 ${d.disagreeCount} 票 (${d.disagreeVoters?.join(', ') || '无'})<br>弃权 ${d.abstainCount} 票 (${d.abstainVoters?.join(', ') || '无'})</div><hr>`; });
+                h.details.forEach(d => { html += `<div style="margin-bottom:0.5rem;"><strong>Q: ${d.question}</strong><br>赞成 ${d.agreeCount} | 反对 ${d.disagreeCount} | 弃权 ${d.abstainCount}</div>`; });
             } else if (h.type === 'winner') {
-                html += `<div><strong>${h.title}</strong><br>正方 ${h.details.pro} 票 (${h.details.proVoters?.join(', ') || '无'})<br>反方 ${h.details.con} 票 (${h.details.conVoters?.join(', ') || '无'})</div>`;
+                html += `<div><strong>${h.title}</strong><br>正方 ${h.details.pro} 票 <span style="font-size:0.8rem;">(${h.details.proVoters?.join(', ') || '无'})</span><br>反方 ${h.details.con} 票 <span style="font-size:0.8rem;">(${h.details.conVoters?.join(', ') || '无'})</span></div>`;
             }
             html += `</div></div>`;
         });
         histDiv.innerHTML = html;
     }
 
-    // ================= 弹窗逻辑 (白名单) =================
-    const voterModal = document.getElementById("voterModal");
+    // ========== 弹窗事件绑定 ==========
     document.getElementById("openVoterModalBtn").onclick = () => {
         document.getElementById("voterNamesInput").value = (appData.allowedVoters || []).join("\n");
-        voterModal.style.display = "flex";
+        document.getElementById("voterModal").style.display = "flex";
     };
-    document.querySelector(".closeVoterModal").onclick = () => voterModal.style.display = "none";
+    document.querySelector(".closeVoterModal").onclick = () => document.getElementById("voterModal").style.display = "none";
     document.getElementById("saveVoterNamesBtn").onclick = async () => {
         appData.allowedVoters = document.getElementById("voterNamesInput").value.split("\n").map(s => s.trim()).filter(s => s);
-        voterModal.style.display = "none";
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("名单已保存并锁定");
+        document.getElementById("voterModal").style.display = "none";
+        await pushToRemote(); renderAdminUI(false);
     };
 
-    // ================= 弹窗逻辑 (辩题) =================
-    const topicModal = document.getElementById("topicModal");
     document.getElementById("openTopicModalBtn").onclick = () => {
         const mList = document.getElementById("modalTopicsList");
         mList.innerHTML = "";
         (appData.topics || []).forEach((t, idx) => {
-            mList.innerHTML += `
-                <div style="margin-bottom:1rem;">
-                    <label style="font-weight:bold; color:#1e293b;">辩题 ${idx+1}</label>
-                    <input type="text" value="${escapeHtml(t.title)}" data-id="${t.id}" class="modal-topic-title" style="margin-top:0.3rem;">
-                </div>
-            `;
+            mList.innerHTML += `<div style="margin-bottom:1rem;"><label style="font-weight:bold;">辩题 ${idx+1}</label><input type="text" value="${escapeHtml(t.title)}" data-id="${t.id}" class="modal-topic-title"></div>`;
         });
-        topicModal.style.display = "flex";
+        document.getElementById("topicModal").style.display = "flex";
     };
-    document.querySelector(".closeTopicModal").onclick = () => topicModal.style.display = "none";
+    document.querySelector(".closeTopicModal").onclick = () => document.getElementById("topicModal").style.display = "none";
     document.getElementById("saveTopicsBtn").onclick = async () => {
         document.querySelectorAll(".modal-topic-title").forEach(inp => {
             const t = appData.topics.find(x => x.id === inp.dataset.id);
             if (t) t.title = inp.value.trim();
         });
-        topicModal.style.display = "none";
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("辩题已保存并锁定");
+        document.getElementById("topicModal").style.display = "none";
+        await pushToRemote(); renderAdminUI(false);
     };
 
-    // ================= 弹窗逻辑 (最佳辩手及辩题) =================
-    const debaterModal = document.getElementById("debaterModal");
     document.getElementById("openDebaterModalBtn").onclick = () => {
         document.getElementById("modalDebateTopicInput").value = appData.debateTopic || "";
         const mPosContainer = document.getElementById("modalPositionsContainer");
         mPosContainer.innerHTML = "";
         appData.positions.forEach(p => {
-            mPosContainer.innerHTML += `
-                <div class="position-item">
-                    <div class="position-label">${p.label}</div>
-                    <input type="text" class="position-input" data-key="${p.key}" value="${escapeHtml(p.name)}" placeholder="辩手姓名">
-                </div>
-            `;
+            mPosContainer.innerHTML += `<div class="position-item"><div class="position-label">${p.label}</div><input type="text" class="position-input" data-key="${p.key}" value="${escapeHtml(p.name)}" placeholder="姓名 (不填隐藏)"></div>`;
         });
-        debaterModal.style.display = "flex";
+        document.getElementById("debaterModal").style.display = "flex";
     };
-    document.querySelector(".closeDebaterModal").onclick = () => debaterModal.style.display = "none";
+    document.querySelector(".closeDebaterModal").onclick = () => document.getElementById("debaterModal").style.display = "none";
     document.getElementById("saveDebatersBtn").onclick = async () => {
         appData.debateTopic = document.getElementById("modalDebateTopicInput").value.trim();
         document.querySelectorAll("#modalPositionsContainer .position-input").forEach(inp => {
@@ -473,20 +467,19 @@
             const pos = appData.positions.find(p => p.key === key);
             if (pos) pos.name = inp.value.trim();
         });
-        debaterModal.style.display = "none";
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("辩手配置已保存并锁定");
+        document.getElementById("debaterModal").style.display = "none";
+        await pushToRemote(); renderAdminUI(false);
     };
 
-    // ================= 投票控制事件 =================
+    // ========== 投票控制事件 ==========
     document.getElementById("startDebateBtn").onclick = async () => {
+        if(!confirm("开启后，观众端将立即切换至最佳辩手投票页面！")) return;
         appData.phase = "debateVoting"; appData.debateVotes = {}; appData.pkVotes = {};
         appData.pkModeActive = false; appData.tieCandidates = [];
-        await pushToRemote(); renderAdminUI(false); alert("最佳辩手投票已开启");
+        await pushToRemote(); renderAdminUI(false);
     };
     document.getElementById("endDebateBtn").onclick = async () => {
-        if (appData.phase !== "debateVoting" && appData.phase !== "pkVoting") return;
+        if (appData.phase !== "debateVoting" && appData.phase !== "pkVoting") { alert("当前未在辩手投票阶段"); return; }
         const active = appData.pkModeActive ? appData.tieCandidates.map(k => appData.positions.find(p => p.key === k)) : getActiveDebaters();
         const target = appData.pkModeActive ? appData.pkVotes : appData.debateVotes;
         const details = active.map(d => {
@@ -496,15 +489,12 @@
             return { candidate: d.name, votes: voters.length, voters };
         }).filter(Boolean);
         saveHistory(appData.pkModeActive ? "pk" : "debate", appData.debateTopic || "未填写辩题", details);
-        appData.phase = "waiting"; await pushToRemote(); renderAdminUI(false); alert("投票已结束，记录已保存");
+        appData.phase = "waiting"; await pushToRemote(); renderAdminUI(false); alert("投票结束并归档");
     };
     
     document.getElementById("sendTopicsBtn").onclick = async () => {
-        appData.topicVotes = { t1: {}, t2: {}, t3: {} };
-        appData.phase = "topicVoting";
-        await pushToRemote();
-        renderAdminUI(false);
-        alert("辩题投票已发送");
+        appData.topicVotes = { t1: {}, t2: {}, t3: {} }; appData.phase = "topicVoting";
+        await pushToRemote(); renderAdminUI(false);
     };
     document.getElementById("endTopicsBtn").onclick = async () => {
         if (appData.phase !== "topicVoting") return;
@@ -512,36 +502,34 @@
             const votes = appData.topicVotes[t.id] || {};
             let a=0, d=0, ab=0, aV=[], dV=[], abV=[];
             for (let v in votes) {
-                if (votes[v] === "agree") { a++; aV.push(v); }
-                else if (votes[v] === "disagree") { d++; dV.push(v); }
-                else { ab++; abV.push(v); }
+                if (votes[v] === "agree") { a++; aV.push(v); } else if (votes[v] === "disagree") { d++; dV.push(v); } else { ab++; abV.push(v); }
             }
             return { question: t.title, agreeCount: a, disagreeCount: d, abstainCount: ab, agreeVoters: aV, disagreeVoters: dV, abstainVoters: abV };
         });
-        saveHistory("topic", "辩题投票", details);
-        appData.phase = "waiting"; await pushToRemote(); renderAdminUI(false); alert("辩题投票已结束，记录已保存");
+        saveHistory("topic", "辩题表决结果", details);
+        appData.phase = "waiting"; await pushToRemote(); renderAdminUI(false); alert("辩题投票结束并归档");
     };
 
     document.getElementById("startWinnerBtn").onclick = async () => {
         appData.phase = "winnerVoting"; appData.winnerVotes = {};
-        appData.winnerTopic = document.getElementById("winnerTopicInput").value.trim();
-        await pushToRemote(); renderAdminUI(false); alert("胜方投票已开启");
+        appData.winnerTopic = document.getElementById("winnerTopicInput").value.trim() || "本次辩论的胜方";
+        await pushToRemote(); renderAdminUI(false);
     };
     document.getElementById("endWinnerBtn").onclick = async () => {
         if (appData.phase !== "winnerVoting") return;
         let proVoters = [], conVoters = [];
         for (let v in appData.winnerVotes) {
-            if (appData.winnerVotes[v] === "pro") proVoters.push(v);
-            else if (appData.winnerVotes[v] === "con") conVoters.push(v);
+            if (appData.winnerVotes[v] === "pro") proVoters.push(v); else if (appData.winnerVotes[v] === "con") conVoters.push(v);
         }
         saveHistory("winner", appData.winnerTopic, { pro: proVoters.length, con: conVoters.length, proVoters, conVoters });
-        appData.phase = "waiting"; await pushToRemote(); renderAdminUI(false); alert("胜方投票已结束，记录已保存");
+        appData.phase = "waiting"; await pushToRemote(); renderAdminUI(false); alert("胜方投票结束并归档");
     };
 
     document.getElementById("deleteAllHistoryBtn").onclick = deleteAllHistory;
 
     function escapeHtml(s) { return s ? s.replace(/[&<>]/g, function(m) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]; }) : ""; }
 
+    // ========== 数据同步 (核心修复区域) ==========
     let isSyncing = false;
     async function sync() {
         if (isSyncing) return;
@@ -552,26 +540,27 @@
             if (remote) {
                 const oldPhase = appData.phase;
                 appData = { ...appData, ...remote };
+                
+                // 初始化防止null
                 if (!appData.topicVotes) appData.topicVotes = {}; if (!appData.debateVotes) appData.debateVotes = {};
                 if (!appData.pkVotes) appData.pkVotes = {}; if (!appData.allowedVoters) appData.allowedVoters = [];
-                if (!appData.positions) appData.positions = []; if (!appData.topics) appData.topics = [];
-                if (!appData.winnerVotes) appData.winnerVotes = {};
-                if (oldPhase !== appData.phase) renderAdminUI(true); else renderAdminUI(false);
+                if (!appData.topics) appData.topics = []; if (!appData.winnerVotes) appData.winnerVotes = {};
+                
+                // ⚠️ 核心修复：强制补全8个辩手位置
+                let mergedPositions = [];
+                DEFAULT_POSITIONS.forEach(dp => {
+                    const exist = (appData.positions || []).find(p => p.key === dp.key);
+                    mergedPositions.push(exist ? exist : { ...dp });
+                });
+                appData.positions = mergedPositions;
+
+                renderAdminUI(oldPhase !== appData.phase);
             } else {
-                if (appData.positions.length === 0) {
-                    appData.positions = [
-                        { key: "正方一辩", label: "正方一辩", name: "张明" }, { key: "正方二辩", label: "正方二辩", name: "李华" },
-                        { key: "正方三辩", label: "正方三辩", name: "王芳" }, { key: "正方四辩", label: "正方四辩", name: "赵磊" },
-                        { key: "反方一辩", label: "反方一辩", name: "陈晨" }, { key: "反方二辩", label: "反方二辩", name: "周婷" },
-                        { key: "反方三辩", label: "反方三辩", name: "吴迪" }, { key: "反方四辩", label: "反方四辩", name: "郑爽" }
-                    ];
-                }
+                // 初次使用或数据空时的初始化
+                appData.positions = [...DEFAULT_POSITIONS];
                 if (appData.topics.length === 0) {
-                    appData.topics = [
-                        { id: "t1", title: "人工智能是否会取代人类工作" }, { id: "t2", title: "短视频对青少年影响利大于弊" }, { id: "t3", title: "应该禁止未成年人玩网络游戏" }
-                    ];
+                    appData.topics = [ { id: "t1", title: "辩题一" }, { id: "t2", title: "辩题二" }, { id: "t3", title: "辩题三" } ];
                 }
-                if (!appData.winnerTopic) appData.winnerTopic = "本次辩论的胜方";
                 renderAdminUI(true);
             }
         } catch(e) { console.error(e); } finally { isSyncing = false; }
