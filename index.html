@@ -10,7 +10,6 @@
         h2 { text-align: center; margin-bottom: 1.5rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
         
         .form-group { margin-bottom: 1.2rem; }
-        /* 强化了提示的颜色和粗细 */
         label { display: block; font-weight: bold; margin-bottom: 0.5rem; color: #dc2626; font-size: 1.05rem; }
         input[type="text"] { width: 100%; padding: 0.8rem; border: 2px solid #cbd5e1; border-radius: 0.5rem; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s; }
         input[type="text"]:focus { border-color: #3b82f6; outline: none; }
@@ -25,6 +24,11 @@
         
         .waiting-msg { text-align: center; color: #d97706; font-size: 1.2rem; font-weight: bold; padding: 3rem 0; }
         .hidden { display: none; }
+        
+        /* 新增：修改姓名按钮的样式 */
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #e2e8f0; }
+        .btn-logout { width: auto; padding: 0.4rem 0.8rem; background: #ef4444; font-size: 0.85rem; border-radius: 0.4rem; }
+        .btn-logout:hover { background: #dc2626; }
     </style>
 </head>
 <body>
@@ -42,7 +46,11 @@
     </div>
 
     <div id="votingSection" class="hidden">
-        <p style="text-align: right; font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">当前投票人: <strong id="displayUserName" style="color:#0f172a; font-size:1rem;"></strong></p>
+        <div class="header-bar">
+            <span style="font-size: 0.85rem; color: #64748b;">当前投票人: <strong id="displayUserName" style="color:#0f172a; font-size:1rem;"></strong></span>
+            <button class="btn-logout" onclick="logout()">🔄 修改姓名</button>
+        </div>
+        
         <div id="dynamicContent">
             <div class="waiting-msg">⏳ 正在同步赛事状态...</div>
         </div>
@@ -50,13 +58,11 @@
 </div>
 
 <script>
-    // 你的原版 API
     const API_CONFIGS = [
         { apiKey: "$2a$10$J.nzDSD1igPJF/7QuiBE8.W8N/6O3wwPYi3dvNZ5xTO3tfu9XP.ZC", binId: "69c6e9f0aa77b81da9286fee" },
         { apiKey: "$2a$10$KFcTvvnVuwIivhUsGq8.z.pmXNh4Z9v/CkRxBRwj9zG2JebPaBcg6", binId: "69c6fdadc3097a1dd569be7c" }
     ];
 
-    // 去掉了缓存自动登录，确保每次打开都必须填名字
     let currentUser = ""; 
     let appData = {};
     let syncTimer = null;
@@ -101,13 +107,22 @@
                 errObj.style.display = "block";
                 return;
             }
-            // 验证通过，正式进入
             currentUser = nameInput;
             showVotingSection();
         } else {
             errObj.innerText = "❗️ 网络连接失败，请重试";
             errObj.style.display = "block";
         }
+    }
+
+    // 新增：修改姓名（退出）功能
+    function logout() {
+        currentUser = "";
+        document.getElementById("votingSection").classList.add("hidden");
+        document.getElementById("loginSection").classList.remove("hidden");
+        document.getElementById("voterName").value = "";
+        document.getElementById("loginError").style.display = "none";
+        if (syncTimer) { clearInterval(syncTimer); syncTimer = null; }
     }
 
     function showVotingSection() {
@@ -129,7 +144,6 @@
 
         let html = "";
         
-        // 最佳辩手投票
         if (phase === "debateVoting") {
             if ((appData.debateVotes || {})[currentUser]) {
                 content.innerHTML = `<div class="waiting-msg">✅ 您已成功投票给最佳辩手<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待该轮投票结束。</span></div>`; return;
@@ -140,7 +154,6 @@
             });
             html += `<button onclick="submitVote('debateVotes', getRadioValue('vote'))" style="margin-top:1rem;">确认投票</button>`;
         } 
-        // 平票加赛投票
         else if (phase === "pkVoting") {
             if ((appData.pkVotes || {})[currentUser]) {
                 content.innerHTML = `<div class="waiting-msg">✅ 您的PK票已投出<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">请等待该轮投票结束。</span></div>`; return;
@@ -152,7 +165,6 @@
             });
             html += `<button onclick="submitVote('pkVotes', getRadioValue('vote'))" style="margin-top:1rem; background:#f59e0b;">确认投票</button>`;
         }
-        // 胜方投票
         else if (phase === "winnerVoting") {
             if ((appData.winnerVotes || {})[currentUser]) {
                 content.innerHTML = `<div class="waiting-msg">✅ 您的胜负票已投出</div>`; return;
@@ -162,7 +174,6 @@
             html += `<label class="radio-option"><input type="radio" name="vote" value="con"> 反方 胜</label>`;
             html += `<button onclick="submitVote('winnerVotes', getRadioValue('vote'))" style="margin-top:1rem; background:#166534;">确认投票</button>`;
         }
-        // 辩题投票
         else if (phase === "topicVoting") {
             if (Object.keys(appData.topicVotes || {}).some(topicId => appData.topicVotes[topicId][currentUser])) {
                 content.innerHTML = `<div class="waiting-msg">✅ 您的辩题表决已投出</div>`; return;
@@ -173,7 +184,7 @@
                     html += `<div style="margin-bottom: 1.5rem; background: #f1f5f9; padding: 1rem; border-radius: 0.5rem;">
                         <p style="font-weight:bold; margin-bottom:0.8rem;">${t.title}</p>
                         <label style="display:inline-block; margin-right:1rem;"><input type="radio" name="${t.id}" value="agree"> 赞成</label>
-                        <label style="display:inline-block; margin-right:1rem;"><input type="radio" name="${t.id}" value="disagree"> 反对</label>
+                        <label style="display:inline-block; margin-right:1rem;"><input type="radio" name="${t.id}" value="disagree"> 反反对</label>
                         <label style="display:inline-block;"><input type="radio" name="${t.id}" value="abstain"> 弃权</label>
                     </div>`;
                 }
@@ -246,7 +257,6 @@
     }
 
     window.onload = () => {
-        // 去掉了原先跳过登录的逻辑，现在每个人一进来都只看到输入名字的框框
         document.getElementById("loginSection").classList.remove("hidden");
     };
 </script>
